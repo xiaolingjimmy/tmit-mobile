@@ -1,0 +1,813 @@
+/* 通用：文本、升级、购买项、点击项分类box*/
+
+@font-face {
+  font-family: 'a';
+  src: local('bahnschrift'), local(monospace);
+  unicode-range: U+0000-001F, U+0020-007F, U+00B7, U+0391-03C9;
+}
+
+@font-face {
+  font-family: 'b';
+  src: local('楷体'), local('宋体');
+  unicode-range: U+0020, U+0080-00B6, U+00B8-0390, U+03CA-FFFF;
+}
+
+.displayBox {
+  border-color: white;
+  position: relative;
+  background-color: rgba(0, 0, 0, 0);
+  min-height: 120px;
+}
+
+.nomargin {
+  margin: 0 -7px 0 -7px
+}
+
+.wide480px {
+  width: 480px;
+}
+
+.wide600px {
+  width: 600px;
+}
+
+.wide720px {
+  width: 720px;
+}
+
+.secret.achievement.bought{
+  background-color: #a080ff
+}
+
+.background-overworld {
+  background: linear-gradient(to bottom, #6b99ff 40%, #548049 40%, #548049 41%, #5f452f 41%, #5f452f 44%, #4a4a4a 44%, #4a4a4a 71.5%, #252525 71.5%, #252525 99%, #0d0d0d 99%, #0d0d0d 100%);
+}
+
+.background-overworld::before {
+  content: "";
+  position: absolute;
+  top: 40%;
+  left: 75%;
+  width: 25%;
+  height: 4%;
+  background-color: #d6cf97
+}
+
+.background-twilight_forest {
+  background:
+    linear-gradient(to bottom, #00000000 60%, #1c5221 60%, #1c5221 67.5%, #548049 67.5%, #548049 68.5%, #5f452f 68.5%, #5f452f 71.5%, #4a4a4a 71.5%, #4a4a4a 99%, #0d0d0d 99%, #0d0d0d 100%),
+    radial-gradient(#abcfe8 6%, #00000000 6%),
+    radial-gradient(#abcfe8 6%, #00000000 6%),
+    linear-gradient(to bottom, #436986 600%, #00000000 670%);
+  background-size: 100% 100%, 30% 30%, 30% 30%, 100% 100%;
+  background-position: 0 0, 0 0, 20% 20%, 0 0;
+}
+
+.background-nether {
+  background:
+    linear-gradient(to bottom, #723232 12.5%, #00000000 12.5%),
+    linear-gradient(to bottom, #00000000 12.5%, #744848 12.5%, #744848 25%, #00000000 25%),
+    linear-gradient(to bottom, #00000000 25%, #30181c 25%, #30181c 37.5%, #00000000 37.5%),
+    linear-gradient(to right, #00000000 12.5%, #30181c 12.5%, #30181c, 31.25%, #00000000 31.25%, #00000000 68.75%, #30181c, 68.75%, #30181c 87.5%, #00000000 87.5%),
+    linear-gradient(to bottom, #00000000 0%, #00000000 87.5%, #d96616 87.5%),
+    linear-gradient(to right, #744848 12.5%, #00000000 12.5%, #00000000, 87.5%, #744848 87.5%),
+    linear-gradient(225deg, #00000000 31.25%, #30181c 31.25%, #30181c 43.75%, #00000000 43.75%),
+    linear-gradient(315deg, #00000000 56.25%, #30181c 56.25%, #30181c 68.75%, #00000000 68.75%),
+    linear-gradient(to bottom, #00000000 12.5%, #744848 12.5%);
+}
+
+.background-nether::before {
+  content: "";
+  position: absolute;
+  top: 87.35%;
+  left: 31.1%;
+  width: 37.8%;
+  height: 12.8%;
+  background-color: #652828
+}
+
+.automation-clickables {
+  min-height: 160px;
+  width: 210px;
+}
+
+.showStoryButton {
+  border-radius: 100%;
+  font-size: 24px;
+  width: 100px;
+  min-height: 100px;
+  background-color: #fcfdf5;
+  text-align: center;
+  vertical-align: middle;
+}
+
+.modalButton {
+  background-color: transparent;
+  color: #fff;
+  font-size: 25px;
+  font-family: var(--font);
+  padding: 8px 20px;
+  padding-bottom: 18px;
+  margin: 5px;
+  border: 3px solid;
+  border-radius: 5px;
+  transition-duration: 0.4s;
+  cursor: pointer;
+}
+
+.modalConfirm {
+  border: 2px solid white;
+  border-radius:5px; 
+  height: 25px; 
+  position: absolute; 
+  bottom: 10px; 
+  left: 44%; 
+  width: 100px; 
+  font-size:20px; 
+  padding:10px;
+  transition-duration: 0.4s;
+  cursor: pointer;
+}
+
+.modalButton:hover,
+.modalConfirm:hover {
+  transform: scale(1.15, 1.15);
+	box-shadow: 0 0 20px var(--points)
+}
+
+/* 金层级：时钟页面 */
+/* 钟表外框 */
+.clock {
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  position: relative;
+  background-color: var(--clockBg);
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  background-clip: content-box;
+}
+
+.clockBg {
+  width: 220px;
+  height: 220px;
+  border-radius: 50%;
+  position: relative;
+  right: 10px;
+  bottom: 10px;
+  background: linear-gradient(45deg, #b26411 0%, #fdf55f 10%, #fffde0 20%, #fdf55f 30%, #fdf55f 80%, #752802 100%);
+  z-index: -1;
+}
+
+/* 指针通用样式 */
+.hour-hand,
+.minute-hand,
+.second-hand {
+  position: absolute;
+  background: #333;
+  transform-origin: bottom center;
+  /* 旋转中心在底部 */
+}
+
+/* 时针 */
+.hour-hand {
+  width: 6px;
+  height: 60px;
+  top: 40px;
+  left: 97px;
+  transform: var(--hourDeg);
+}
+
+/* 分针 */
+.minute-hand {
+  width: 4px;
+  height: 80px;
+  top: 20px;
+  left: 98px;
+  transform: var(--minuteDeg);
+}
+
+/* 秒针 */
+.second-hand {
+  width: 2px;
+  height: 90px;
+  top: 10px;
+  left: 99px;
+  background-color: red;
+  transform: var(--secondDeg);
+}
+
+/* 红石层级：附魔光效 */
+@keyframes enchant-glow {
+  0% {
+    background-position: 0% 300%;
+    /* 动画起始位置 */
+  }
+
+  100% {
+    background-position: 300% 0%;
+    /* 动画结束位置 */
+  }
+}
+
+/* minecraft流体背景图，等比放大且有动态效果实现 （熔融红石） 但是貌似有问题*/
+@keyframes liquid-animation {
+  from {
+    background-position: 0 0;
+  }
+
+  to {
+    background-position: 0 -5120px;
+  }
+}
+
+@keyframes molten-animation {
+  from {
+    background-position: 0 0;
+  }
+
+  to {
+    background-position: 0 -3200px;
+  }
+
+}
+
+.fluid-pixels {
+  image-rendering: pixelated;
+  background-size: 100% auto;
+  background-repeat: no-repeat;
+}
+
+.bbmm {
+  background-blend-mode: multiply;
+}
+
+.liquid-animation {
+  animation: liquid-animation 3.2s steps(32) infinite alternate;
+}
+
+.molten-animation {
+  animation: molten-animation 2s steps(20) infinite alternate;
+}
+
+/* 红石琥珀金层级：文本样式 */
+.text-redstoneElectrum {
+  color: #fffcbc;
+  text-shadow: 0 0 10px #fc0000;
+  display: inline-block;
+}
+
+/* 拆解神秘花clickables */
+.mysticalFlowerClickables {
+  min-height: 60px;
+  width: 200px;
+  border-radius: 5px;
+  font-size: 15px;
+}
+
+/* 魔力钢层级：文本样式 */
+.text-manasteel {
+  background: linear-gradient(to bottom, #005ee0 0%, #7db4ff 20%, #006bff 80%, #0045a3 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 0 10px #005ee0;
+  display: inline-block;
+}
+
+.text-platinum {
+  background: linear-gradient(to bottom, #62d1f3 0%, #c8fbff 30%, #ffffff 50%, #aae3ff 80%, #476fbe 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 0 10px #c8fbff;
+  display: inline-block;
+}
+
+.text-terrasteel {
+  background: linear-gradient(to bottom, #2f8300 0%, #9fff57 15%, #53f900 80%, #39bc00 90%, #277c00 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 0 10px #53f900;
+  display: inline-block;
+}
+
+.text-ironwood {
+  background: linear-gradient(to bottom, #4d4139 0%, #4d4139 15%, #a3a08a 30%, #827766 40%, #848860 50%, #827766 60%, #848860 70%, #827766 80%, #2c2d28 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 0 10px #827766;
+  display: inline-block;
+}
+
+.text-naga_scale {
+  color: #325425;
+  text-shadow: 0 0 10px #172911;
+  display: inline-block;
+}
+
+.text-elementium {
+  background: linear-gradient(to bottom, #e90081 0%, #facae4 15%, #f15cae 80%, #ed339a 90%, #bb0067 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 0 10px #f15cae;
+  display: inline-block;
+}
+
+.text-alfsteel {
+  background: linear-gradient(to bottom, #fcb600 0%, #bd5a00 15%, #fcbb00 80%, #e98000 90%, #763b00 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 0 10px #fcbb00;
+  display: inline-block;
+}
+
+@keyframes fieryText {
+
+  0%,
+  100% {
+    color: #191313;
+    text-shadow: 0 0 10px #ffd83a;
+  }
+
+  50% {
+    color: #662d09;
+    text-shadow: 0 0 10px white;
+  }
+}
+
+.text-fiery {
+  /*#191313 #662d09*/
+  animation: fieryText 4s ease-in-out infinite;
+}
+
+.text-amethyst {
+  background: linear-gradient(225deg, #fecbe6 0%, #b38ef3 20%, #fecbe6 30%, #cfa0f3 40%, #b38ef3 60%, #8d6acc 80%, #64479e 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 0 10px #b38ef3;
+  display: inline-block;
+}
+
+.text-lumium {
+  background: linear-gradient(to bottom, #d28c2e 5%, #eff3ce 15%, #dee38b 25%, #f1f9df 75%, #e1e9b6 90%, #d09140 95%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 0 10px #f1f9df;
+  display: inline-block;
+}
+
+.text-signalum {
+  background: linear-gradient(to bottom, #671500 5%, #ff891c 15%, #e13f00 30%, #ffa71a 60%, #f25200 80%, #671500 95%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 0 10px #e13f00;
+  display: inline-block;
+}
+
+.text-glowing_signalum {
+  background: linear-gradient(to bottom, #671500 5%, #ff891c 15%, #e13f00 30%, #ffa71a 60%, #f25200 80%, #671500 95%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 0 10px #fff030;
+  display: inline-block;
+}
+
+.text-torridite {
+  background: linear-gradient(to bottom, #68031f 5%, #b91d1d 10%, #fcac83 15%, #f15221 30%, #b91d1d 45%, #f15221 60%, #b91d1d 75%, #f15221 90%, #900613 95%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 0 10px #b91d1d;
+  display: inline-block;
+}
+
+.text-cobalt {
+  background: linear-gradient(to bottom, #03265f 5%, #59aaef 10%, #2376dd 15%, #1d6288 20%, #2376dd 30%, #2376dd 80%, #1d6288 90%, #03265f 95%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 0 10px #2376dd;
+  display: inline-block;
+}
+
+.text-ardite {
+  background: linear-gradient(to bottom, #471717 5%, #ff8517 10%, #cd5117 15%, #702e17 20%, #d55917 30%, #c34c17 80%, #f97717 90%, #471717 95%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 0 10px #cd5117;
+  display: inline-block;
+}
+
+.text-manyullyn {
+  background: linear-gradient(to bottom, #481d6d 5%, #bd92f1 10%, #a97de0 15%, #926ae3 20%, #a97de0 30%, #a97de0 80%, #926ac3 90%, #481d6d 95%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 0 10px #a97de0;
+  display: inline-block;
+}
+
+
+.text-enderium {
+  background: linear-gradient(to bottom, #083839 5%, #106565 15%, #0b4748 25%, #0f5c5c 30%, #127575 60%, #0d6161 90%, #093f40 95%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 0 10px #0f5c5c;
+  display: inline-block;
+}
+
+.text-geild_enderium {
+  background: linear-gradient(to bottom, #083839 5%, #106565 15%, #0b4748 25%, #0f5c5c 30%, #127575 60%, #0d6161 90%, #093f40 95%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 0 10px #40b8fb;
+  display: inline-block;
+}
+
+.text-dark_steel {
+  background: linear-gradient(to bottom, #1a1a1a 5%, #696969 10%, #535353 15%, #2a2a2a 20%, #636363 30%, #4c4c4c 85%, #1a1a1a 95%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 0 10px #535353;
+  display: inline-block;
+}
+
+.text-alumite {
+  background: linear-gradient(to bottom, #dc7ec4 5%, #f4ceec 10%, #fcfefc 20%, #fcfefc 80%, #f4ceec 85%, #dc7ec4 95%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 0 10px #f4ceec;
+  display: inline-block;
+}
+
+.text-end_steel {
+  background: linear-gradient(to bottom, #6b6531 5%, #f2ecb8 10%, #9d9765 20%, #f7f1bd 40%, #dbd3a7 48%, #dbd3a7 52%, #f9f7c8 90%, #6b6531 95%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 0 10px #f7f1bd;
+  display: inline-block;
+}
+
+.text-arlemite {
+  background: linear-gradient(to bottom, #6fbb4e 15%, #daf280 20%, #daf280 25%, #6fbb4e 30%, #9bd459 40%, #9bd459 70%, #6fbb4e 80%, #257c2a 95%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 0 10px #6fbb4e;
+  display: inline-block;
+}
+
+.text-realmite {
+  background: linear-gradient(to bottom, #bf661d 15%, #fcdd7b 20%, #eead26 25%, #e18c29 40%, #eead26 60%, #e18c29 80%, #bf661b 90%, #7b3301 95%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 0 10px #e18c29;
+  display: inline-block;
+}
+
+.text-rupee {
+  background: linear-gradient(to bottom, #094f87 15%, #b3f0ef 20%, #339fc6 25%, #3ac4e1 40%, #339fc6 60%, #3ac4e1 80%, #339fc6 90%, #175b90 95%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 0 10px #3ac4e1;
+  display: inline-block;
+}
+
+.text-shadow_bar {
+  background: linear-gradient(to bottom, #2a2a2a 5%, #4e4e4e 15%, #8e8e8e 25%, #4e4e4e 30%, #666666 40%, #4e4e4e 50%, #666666 60%, #4e4e4e 70%, #666666 80%,#4e4e4e 90%, #2a2a2a 95%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 0 10px #4e4e4e;
+  display: inline-block;
+}
+
+.text-hellstone {
+  background: linear-gradient(to bottom, #4c1b15 5%, #663421 15%, #a48267 25%, #663421 30%, #7c4d34 40%, #663421 50%, #7c4d34 60%, #663421 70%, #7c4d34 80%,#663421 90%, #4c1b15 95%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 0 10px #663421;
+  display: inline-block;
+}
+
+.text-chromium {
+  background: linear-gradient(to bottom, #6d5560 5%, #d3bbc6 20%, #7e6671 25%, #d3bbc6 80%, #ebd3de 85%, #6d5560 95%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 0 10px #d3bbc6;
+  display: inline-block;
+}
+
+.text-manganese {
+  background: linear-gradient(to bottom, #263238 5%, #546e7a 20%, #37474f 25%, #546e7a 30%, #546e7a 80%, #78909c 87%, #263238 94%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 0 10px #546e7a;
+  display: inline-block;
+}
+
+.text-manganese_steel {
+  background: linear-gradient(to bottom, #263238 5%, #546e7a 20%, #37474f 25%, #546e7a 30%, #697377 55%, #737475 80%, #606060 87%, #424242 94%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 0 10px #697377;
+  display: inline-block;
+}
+
+.text-stainless_steel {
+  background: linear-gradient(to bottom, #757575 5%, #d4d4d4 15%, #8a8a8a 20%, #c7c7c7 25%, #9e9e9e 90%, #454545 95%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 0 10px #c7c7c7;
+  display: inline-block;
+}
+
+.platinum45deg {
+  background: linear-gradient(45deg, #62d1f3 0%, #c8fbff 30%, #ffffff 50%, #aae3ff 80%, #476fbe 100%);
+}
+
+@keyframes fieryBg {
+
+  0%,
+  100% {
+    background-color: #191313;
+    border-color: #ffd83a;
+    color: #ffd83a;
+  }
+
+  50% {
+    background-color: #662d09;
+    border-color: white;
+    color: white;
+  }
+}
+
+.fieryBg,
+.upg.fiery.can {
+  animation: fieryBg 4s ease-in-out infinite;
+}
+
+.upg.stone.can,
+.upg.obsidian.can,
+.upg.vis_crystal.can,
+.upg.fiery.can,
+.upg.shadow_bar.can,
+.upg.hellstone.can {
+  color: white
+}
+
+.twilight_gem.milestoneDone {
+  background: repeating-linear-gradient(45deg, rgba(255, 0, 255, 0.5) 25%, rgba(255, 0, 255, 0) 50%, rgba(255, 0, 255, 0.5) 75%), #f50057;
+  background-size: 300% 300%;
+  animation: enchant-glow 12s linear infinite;
+}
+
+.enemyClickables {
+  line-height: 60%;
+  min-height: 150px;
+  width: 200px;
+  border-radius: 5px;
+  margin-left: -7px;
+  margin-right: -7px;
+}
+
+.attackClickables {
+  min-height: 150px;
+  width: 200px;
+  border-radius: 5px;
+  margin-left: -7px;
+  margin-right: -7px;
+}
+
+.battlestatusClickables {
+  min-height: 50px;
+  width: 100px;
+  border-radius: 5px;
+  font-size: 20px;
+  margin-left: -7px;
+  margin-right: -7px;
+}
+
+@keyframes rainbowText {
+
+  0%,
+  100% {
+    color: red;
+    text-shadow: 0 0 10px red;
+  }
+
+  8.33% {
+    color: orange;
+    text-shadow: 0 0 10px orange;
+  }
+
+  16.67% {
+    color: yellow;
+    text-shadow: 0 0 10px yellow;
+  }
+
+  25% {
+    color: lime;
+    text-shadow: 0 0 10px lime;
+  }
+
+  33.33% {
+    color: green;
+    text-shadow: 0 0 10px green;
+  }
+
+  50% {
+    color: cyan;
+    border-color: cyan;
+  }
+
+  ;
+
+  66.67% {
+    color: blue;
+    text-shadow: 0 0 10px blue;
+  }
+
+  75% {
+    color: indigo;
+    text-shadow: 0 0 10px indigo;
+  }
+
+  83.33% {
+    color: purple;
+    text-shadow: 0 0 10px purple;
+  }
+
+  91.67% {
+    color: magenta;
+    text-shadow: 0 0 10px magenta;
+  }
+
+  95.83% {
+    color: pink;
+    text-shadow: 0 0 10px pink;
+  }
+}
+
+.rainbowText {
+  animation: rainbowText 10s ease-in-out infinite;
+}
+
+.expired {
+  text-decoration: line-through;
+  background-color: #4e0000;
+  color: #ffeeee;
+}
+
+.skillTree {
+  min-height: 100px;
+  width: 200px;
+  border-radius: 0;
+  border-width: 2px;
+}
+
+.skillTree.can {
+  border-color: white;
+  box-shadow: red 0 0 20px;
+}
+
+.skillTree.hellstone.bought {
+  background-color: #663421;
+  border-color: #77bf5f;
+  color: white;
+}
+
+/* 在左下角添加序列ID */
+.achievement::after {
+  content: attr(data-id); /* 从data-id属性读取ID */
+  position: absolute;
+  bottom: 4px;
+  left: 4px;
+
+  
+  /* 文字样式 */
+  color: rgba(0, 0, 0, 0.01);
+  font-size: 25px; /* 小字体，不喧宾夺主 */
+  font-weight: 600;
+  
+  /* 内边距和形状 */
+  padding: 2px 6px;
+  border-radius: 3px;
+  line-height: 1;
+  
+  /* 确保在最上层但又不干扰交互 */
+  z-index: 0;
+  
+  /* 轻微阴影提升可读性 */
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.5);
+}
+
+.treeNode::after {
+  content: attr(unlockInnerID); /* 从data-id属性读取ID */
+  position: absolute;
+  right: 4px;
+
+  
+  /* 文字样式 */
+  color: rgba(0, 0, 0, 0.01);
+  font-size: 25px; /* 小字体，不喧宾夺主 */
+  font-weight: 600;
+  text-align: right;
+  
+  /* 内边距和形状 */
+  padding: 2px 6px;
+  border-radius: 3px;
+  line-height: 1;
+  
+  /* 确保在最上层但又不干扰交互 */
+  z-index: 0;
+  
+  /* 轻微阴影提升可读性 */
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.5);
+}
+
+.star4_1,
+.star4_2,
+.star4_3,
+.star4_4,
+.star4_5,
+.star4_6 {
+	position: relative;
+	display: inline-block;
+	width: 30px;
+	height: 30px;
+	z-index: 10000;
+	font-size: 15px;
+	overflow:auto;
+	pointer-events: none;
+  clip-path: polygon(50% 100%, 70% 70%, 100% 50%, 70% 30%, 50% 0, 30% 30%, 0 50%, 30% 70% );
+}
+
+.star4_1 {
+  background-color: lightgray;
+}
+
+.star4_2 {
+  background-color: limegreen;
+}
+
+.star4_3 {
+  background-color: cyan;
+}
+
+.star4_4 {
+  background-color: #8825ca;
+}
+
+.star4_5 {
+  background-color: orange;
+}
+
+.star4_6 {
+  background-color: #ff310c;
+}
+
+.star4_1::after {
+  content: '1';
+}
+
+.star4_2::after {
+  content: '2';
+}
+
+.star4_3::after {
+  content: '3';
+}
+
+.star4_4::after {
+  content: '4';
+}
+
+.star4_5::after {
+  content: '5';
+}
+
+.star4_6::after {
+  content: '6';
+}
