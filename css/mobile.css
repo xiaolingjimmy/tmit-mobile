@@ -1752,13 +1752,11 @@
 	opacity: 1 !important;
 }
 
-/* —— 3. 主操作按钮（撸树/挖掘/寻找）呼吸光晕，形成唯一视觉焦点 —— */
+/* —— 3. 主操作按钮（撸树/挖掘/寻找）暖铜光晕 ——
+   原为 box-shadow 呼吸动画，但 box-shadow 无限动画是耗电大户（发热主因之一），
+   改为静态光晕：保留视觉焦点、大幅省电。 */
 .upg[id^="clickable-"][style*="width: 120px"] {
-	animation: mainBtnGlow 2.5s ease-in-out infinite;
-}
-@keyframes mainBtnGlow {
-	0%, 100% { box-shadow: 0 0 0 0 rgba(201, 138, 60, 0.30); }
-	50% { box-shadow: 0 0 18px 5px rgba(232, 178, 90, 0.55); }
+	box-shadow: 0 0 8px 2px rgba(201, 138, 60, 0.35);
 }
 
 /* —— 4. 可购买 vs 不可购买 对比强化 —— */
@@ -1794,16 +1792,7 @@
 	--m-text-3: #a39c90;
 }
 
-/* —— 8. 树连线发光 —— */
-#treeCanvas {
-	filter: drop-shadow(0 0 3px rgba(201, 138, 60, 0.30));
-}
+/* —— 8. 树连线发光 —— 已移除：canvas 每 500ms 重绘，drop-shadow 滤镜是持续耗电项 */
 
-/* 尊重系统「减弱动态效果」：呼吸光晕关闭 */
-@media (prefers-reduced-motion: reduce) {
-	.upg[id^="clickable-"][style*="width: 120px"] {
-		animation: none !important;
-	}
-}
 
 }
