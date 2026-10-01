@@ -4,7 +4,7 @@
 // ============================================================================
 
 ;(function () {
-  var API_BASE = '' // 同源相对路径
+  var API_BASE = window.__API_BASE__ || '' // 同源相对路径，由宿主页注入
   var TOKEN_KEY = 'cloud_save_token'
   var SLOT = 'main'
 
