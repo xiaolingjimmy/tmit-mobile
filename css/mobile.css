@@ -1024,6 +1024,86 @@
 		transition-timing-function: var(--m-ease-out);
 	}
 
+	/* ---------------- 设置页分组标题与副标题 ---------------- */
+	.mset-group-title h1 {
+		font-size: var(--m-fs-3);
+		font-weight: 600;
+		color: var(--m-text-1);
+		margin: 12px 0 4px 0;
+		padding: 0 4px;
+	}
+
+	.mset-subtitle h1 {
+		font-size: var(--m-fs-2);
+		font-weight: 500;
+		color: var(--m-text-3);
+		margin: 8px 0 2px 0;
+		padding: 0 4px;
+	}
+
+	/* 危险操作组 */
+	.mset-danger-wrap {
+		margin-top: 24px !important;
+	}
+
+	.mset-danger-label h1 {
+		color: #ff6666;
+	}
+
+	.mset-danger-cell {
+		flex: 0 0 96% !important;
+		margin: 5px 2%;
+	}
+
+	.mset-danger-btn {
+		background: #3a1a1a !important;
+		border-color: #cc4444 !important;
+		color: #ff6666 !important;
+		min-height: 56px !important;
+	}
+
+	.mset-danger-hint {
+		font-size: var(--m-fs-1);
+		color: #cc4444;
+		margin: 4px 0 0 0;
+		text-align: center;
+	}
+
+	.mset-confirm-box {
+		background: var(--m-rock-700);
+		border: 1px solid #cc4444;
+		border-radius: var(--m-r-1);
+		padding: 12px;
+		margin-top: 8px;
+	}
+
+	.mset-confirm-text {
+		font-size: var(--m-fs-2);
+		color: var(--m-text-1);
+		margin: 0 0 12px 0;
+		text-align: center;
+	}
+
+	.mset-confirm-actions {
+		display: flex;
+		gap: 8px;
+		justify-content: center;
+	}
+
+	.mset-confirm-cancel {
+		background: var(--m-rock-600) !important;
+		min-height: 44px !important;
+		flex: 1;
+	}
+
+	.mset-confirm-ok {
+		background: #3a1a1a !important;
+		border-color: #cc4444 !important;
+		color: #ff6666 !important;
+		min-height: 44px !important;
+		flex: 1;
+	}
+
 	/* ---------------- 提示框 .tooltip ---------------- */
 	.tooltip {
 		max-width: 80vw !important;
@@ -1442,15 +1522,15 @@
 		font-weight: 700;
 	}
 
-	/* 游戏日志入口按钮（位于性能面板底部） */
-	.mp-log-btn {
+	/* 游戏日志折叠面板（位于性能面板底部） */
+	.mp-log-header {
 		flex: 0 0 auto;
-		align-self: flex-start;
+		align-self: stretch;
 		margin: 6px 0 0 0;
-		padding: 6px 14px;
+		padding: 6px 10px;
 		min-height: var(--m-tap);
 		border: 1px solid var(--m-line);
-		border-radius: var(--m-r-pill);
+		border-radius: var(--m-r-1);
 		background: var(--m-rock-600);
 		color: var(--m-text-2);
 		font-size: var(--m-fs-2);
@@ -1460,12 +1540,65 @@
 		box-sizing: border-box;
 		transition-duration: var(--m-dur-fast);
 		transition-timing-function: var(--m-ease-out);
+		text-align: left;
 	}
 
-	.mp-log-btn:active {
-		transform: scale(0.96);
+	.mp-log-header:active {
+		transform: scale(0.98);
 		background: var(--m-rock-500);
 		color: var(--m-text-1);
+	}
+
+	.mp-log-wrap {
+		display: none;
+		flex-direction: column;
+		gap: 6px;
+		margin: 6px 0 0 0;
+		padding: 8px;
+		background: var(--m-rock-800);
+		border: 1px solid var(--m-line-soft);
+		border-radius: var(--m-r-1);
+		max-height: 260px;
+	}
+
+	.mp-log-wrap.expanded {
+		display: flex;
+	}
+
+	.mp-log-list {
+		overflow-y: auto;
+		font-size: var(--m-fs-1);
+		line-height: 1.4;
+		color: var(--m-text-2);
+		flex: 1 1 auto;
+		min-height: 0;
+	}
+
+	.mp-log-list .ml-item {
+		padding: 2px 0;
+		border-bottom: 1px solid var(--m-line-soft);
+	}
+
+	.mp-log-list .ml-item:last-child {
+		border-bottom: none;
+	}
+
+	.mp-log-actions {
+		display: flex;
+		gap: 6px;
+		flex-wrap: wrap;
+	}
+
+	.mp-log-actions button {
+		flex: 1 1 auto;
+		min-height: 32px;
+		padding: 4px 10px;
+		border: 1px solid var(--m-line);
+		border-radius: var(--m-r-1);
+		background: var(--m-rock-600);
+		color: var(--m-text-1);
+		font-size: var(--m-fs-1);
+		cursor: pointer;
 	}
 
 	/* 提示行：平时为空不占位，有内容时才显示（单行省略） */

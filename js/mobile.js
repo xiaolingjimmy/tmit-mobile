@@ -632,7 +632,7 @@
 
 		var title = document.createElement('span');
 		title.className = 'mp-title';
-		title.textContent = '性能';
+		title.textContent = '性能与优化';
 
 		perfMspt = document.createElement('span');
 		perfMspt.className = 'mp-mspt';
@@ -668,13 +668,42 @@
 		panel.appendChild(presets);
 		panel.appendChild(perfHint);
 
-		// 游戏日志入口（不再常驻悬浮，改为点击弹窗查看）
-		var logBtn = document.createElement('button');
-		logBtn.type = 'button';
-		logBtn.className = 'mp-log-btn';
-		logBtn.textContent = '游戏日志';
-		logBtn.addEventListener('click', showLogModal);
-		panel.appendChild(logBtn);
+		// 游戏日志：折叠面板（默认折叠）
+		var logHeader = document.createElement('button');
+		logHeader.type = 'button';
+		logHeader.className = 'mp-log-header';
+		logHeader.textContent = '游戏日志  ▼';
+		var logWrap = document.createElement('div');
+		logWrap.className = 'mp-log-wrap';
+		var logList = document.createElement('div');
+		logList.className = 'mp-log-list';
+		var logActions = document.createElement('div');
+		logActions.className = 'mp-log-actions';
+		var clearBtn = document.createElement('button');
+		clearBtn.type = 'button';
+		clearBtn.textContent = '清空';
+		clearBtn.addEventListener('click', clearLog);
+		var exportBtn = document.createElement('button');
+		exportBtn.type = 'button';
+		exportBtn.textContent = '导出';
+		exportBtn.addEventListener('click', exportLog);
+		var fullBtn = document.createElement('button');
+		fullBtn.type = 'button';
+		fullBtn.textContent = '查看全部';
+		fullBtn.addEventListener('click', showLogModal);
+		logActions.appendChild(clearBtn);
+		logActions.appendChild(exportBtn);
+		logActions.appendChild(fullBtn);
+		logWrap.appendChild(logList);
+		logWrap.appendChild(logActions);
+		logHeader.addEventListener('click', function () {
+			var expanded = logWrap.classList.toggle('expanded');
+			logHeader.textContent = expanded ? '游戏日志  ▲' : '游戏日志  ▼';
+			if (expanded) renderLog();
+		});
+		panel.appendChild(logHeader);
+		panel.appendChild(logWrap);
+		logInlineListEl = logList;
 
 		return panel;
 	}
@@ -1000,6 +1029,7 @@
 	var logPanel = null;
 	var logListEl = null;
 	var logLastTab = null;
+	var logInlineListEl = null;
 
 	// 追加一条日志（level: info/warn/error），超上限丢最旧，再触发重渲染
 	function addLog(level, cat, msg) {
@@ -1014,32 +1044,43 @@
 		return p(d.getHours()) + ':' + p(d.getMinutes()) + ':' + p(d.getSeconds());
 	}
 
+	function renderLogItem(item) {
+		var div = document.createElement('div');
+		div.className = 'ml-item ml-' + item.level;
+		var time = document.createElement('span');
+		time.className = 'ml-time';
+		time.textContent = fmtLogTime(item.t);
+		var lvl = document.createElement('span');
+		lvl.className = 'ml-level';
+		lvl.textContent = item.level.toUpperCase();
+		var body = document.createElement('span');
+		body.className = 'ml-msg';
+		body.textContent = (item.cat ? '[' + item.cat + '] ' : '') + item.msg;
+		div.appendChild(time);
+		div.appendChild(lvl);
+		div.appendChild(body);
+		return div;
+	}
+
 	// 面板可见时才重建（最多 200 行，2 秒才可能变一次，开销可接受）
 	function renderLog() {
-		if (!logListEl || !logPanel || logPanel.hidden) return;
-		var frag = document.createDocumentFragment();
-		for (var i = 0; i < GAME_LOG.length; i++) {
-			var item = GAME_LOG[i];
-			var div = document.createElement('div');
-			div.className = 'ml-item ml-' + item.level;
-			var time = document.createElement('span');
-			time.className = 'ml-time';
-			time.textContent = fmtLogTime(item.t);
-			var lvl = document.createElement('span');
-			lvl.className = 'ml-level';
-			lvl.textContent = item.level.toUpperCase();
-			var body = document.createElement('span');
-			body.className = 'ml-msg';
-			body.textContent = (item.cat ? '[' + item.cat + '] ' : '') + item.msg;
-			div.appendChild(time);
-			div.appendChild(lvl);
-			div.appendChild(body);
-			frag.appendChild(div);
+		// 内联折叠面板
+		if (logInlineListEl) {
+			var frag1 = document.createDocumentFragment();
+			for (var i = 0; i < GAME_LOG.length; i++) frag1.appendChild(renderLogItem(GAME_LOG[i]));
+			logInlineListEl.textContent = '';
+			logInlineListEl.appendChild(frag1);
+			var wrap1 = logInlineListEl.parentNode;
+			if (wrap1) wrap1.scrollTop = wrap1.scrollHeight;
 		}
+		// 弹窗全屏面板
+		if (!logListEl || !logPanel || logPanel.hidden) return;
+		var frag2 = document.createDocumentFragment();
+		for (var i = 0; i < GAME_LOG.length; i++) frag2.appendChild(renderLogItem(GAME_LOG[i]));
 		logListEl.textContent = '';
-		logListEl.appendChild(frag);
-		var wrap = logListEl.parentNode;
-		if (wrap) wrap.scrollTop = wrap.scrollHeight;
+		logListEl.appendChild(frag2);
+		var wrap2 = logListEl.parentNode;
+		if (wrap2) wrap2.scrollTop = wrap2.scrollHeight;
 	}
 
 	function clearLog() {
@@ -1053,7 +1094,7 @@
 		overlay.id = 'mobile-log-overlay';
 		overlay.className = 'mobile-log-overlay';
 		overlay.hidden = true;
-		overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:20050;display:flex;align-items:center;justify-content:center;padding:16px;';
+		overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:20050;align-items:center;justify-content:center;padding:16px;display:none;';
 		overlay.addEventListener('click', function (e) {
 			if (e.target === overlay) hideLogModal();
 		});
@@ -1116,12 +1157,14 @@
 	function showLogModal() {
 		if (!logPanel) return;
 		logPanel.hidden = false;
+		logPanel.style.display = 'flex';
 		renderLog();
 	}
 
 	function hideLogModal() {
 		if (!logPanel) return;
 		logPanel.hidden = true;
+		logPanel.style.display = 'none';
 	}
 
 	function exportLog() {
@@ -1242,8 +1285,13 @@
 		window.importSave = wrapped;
 	}
 
+	function showCloudSaveToast() {
+		alert('云存档功能即将上线，敬请期待');
+	}
+
 	function init() {
 		document.body.classList.add('is-mobile');
+		window.showCloudSaveToast = showCloudSaveToast;
 
 		statusbar = buildStatusbar();
 		navbar = buildNavbar();
