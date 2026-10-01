@@ -16,7 +16,9 @@
 //   9. 设置页注入性能控制面板（MSPT 实时读数 + 更新频率预设，替代游戏的 prompt 入口）；
 //  10. 触屏点击兜底：简单点击按钮 touchend 后若无 click 到达则补调购买（防偶发失效）；
 //  11. 悬浮返回按钮：独立于状态栏、悬浮于导航栏上方、可拖拽（位移 <8px 视为点击）；
-//  12. 隐藏层级页重复的「经验/等级」与顶部版本号（状态栏成为单一来源）。
+//  12. 隐藏层级页重复的「经验/等级」与顶部版本号（状态栏成为单一来源）；
+//  13. 游戏日志：性能采样 / 错误 / 无响应 / 页面切换，设置页展示 + 清空；
+//  14. 包装 importSave：清理 BOM/空白并记录校验/解压/解析各环节（诊断 iPhone 导入失败）。
 // 所有逻辑都在游戏 load() 完成、window.player 就绪之后执行。
 // ==========================================================================
 (function () {
@@ -439,6 +441,10 @@
 		document.body.classList.toggle('mobile-tab-options', onOptions);
 		// 性能面板与快捷入口共用同一开关（兜底：样式未就绪时也不会在非设置页误显）
 		if (perfPanel) perfPanel.hidden = !onOptions;
+		// 日志面板与快捷入口共用同一开关；打开时立即渲染最新日志
+		if (logPanel) { logPanel.hidden = !onOptions; if (onOptions) renderLog(); }
+		// 页面切换检测
+		trackTabChange();
 		updateNavActive();
 		// 每次状态同步都兜底维护折叠表头（幂等）
 		enhanceTree();
@@ -889,12 +895,15 @@
 		if (window.__mNewsScroll) return;
 		window.__mNewsScroll = true;
 		var SPEED = 150; // px/s，与游戏 7.5px/50ms 一致
-		var pos = null, lastTs = null, lastNtl = null;
+		var pos = null, lastTs = null, lastNtl = null, lastStepTs = 0;
 		function apply() {
 			var e = document.getElementById('newsText');
 			if (e && pos !== null) e.style.transform = 'translateX(' + pos.toFixed(2) + 'px)';
 		}
 		function step(ts) {
+			// 降频到约 30fps（每 33ms 才执行一次），节省手机电量；平滑观感损失可忽略
+			if (ts - (lastStepTs || 0) < 33) { requestAnimationFrame(step); return; }
+			lastStepTs = ts;
 			var e = document.getElementById('newsText');
 			if (e) {
 				var ntlNow = (typeof ntl !== 'undefined') ? parseFloat(ntl) : NaN;
@@ -919,10 +928,8 @@
 			requestAnimationFrame(step);
 		}
 		requestAnimationFrame(step);
-		// .res 的 v-html 每 tick 重建 #newsText，会丢掉 transform；这里观察 DOM 变化，
-		// 在重建后的同一微任务内立即补回 transform，避免文字闪到左缘。
-		var mo = new MutationObserver(function () { apply(); });
-		if (document.body) mo.observe(document.body, { childList: true, subtree: true });
+		// 不再用 MutationObserver 观察 document.body（每次 DOM 变化都触发，是耗电大户）。
+		// rAF 每帧都会对当前 #newsText 重新 apply，元素被 .res 重建后的闪跳最多一帧，可接受。
 	}
 
 	// ---------- 二级页（微标签）独立滚动位置 ----------
@@ -967,6 +974,200 @@
 		}, true);
 	}
 
+	// ==================== 游戏日志（任务 #25 B）+ 导入诊断（#25 C）+ 无响应检测（#25 A） ====================
+	var GAME_LOG = [];
+	var LOG_MAX = 200;
+	var logPanel = null;
+	var logListEl = null;
+	var logLastTab = null;
+
+	// 追加一条日志（level: info/warn/error），超上限丢最旧，再触发重渲染
+	function addLog(level, cat, msg) {
+		GAME_LOG.push({ t: Date.now(), level: level, cat: cat, msg: msg });
+		if (GAME_LOG.length > LOG_MAX) GAME_LOG.splice(0, GAME_LOG.length - LOG_MAX);
+		renderLog();
+	}
+
+	function fmtLogTime(t) {
+		var d = new Date(t);
+		function p(n) { return (n < 10 ? '0' : '') + n; }
+		return p(d.getHours()) + ':' + p(d.getMinutes()) + ':' + p(d.getSeconds());
+	}
+
+	// 面板可见时才重建（最多 200 行，2 秒才可能变一次，开销可接受）
+	function renderLog() {
+		if (!logListEl || !logPanel || logPanel.hidden) return;
+		var frag = document.createDocumentFragment();
+		for (var i = 0; i < GAME_LOG.length; i++) {
+			var item = GAME_LOG[i];
+			var div = document.createElement('div');
+			div.className = 'ml-item ml-' + item.level;
+			var time = document.createElement('span');
+			time.className = 'ml-time';
+			time.textContent = fmtLogTime(item.t);
+			var lvl = document.createElement('span');
+			lvl.className = 'ml-level';
+			lvl.textContent = item.level.toUpperCase();
+			var body = document.createElement('span');
+			body.className = 'ml-msg';
+			body.textContent = (item.cat ? '[' + item.cat + '] ' : '') + item.msg;
+			div.appendChild(time);
+			div.appendChild(lvl);
+			div.appendChild(body);
+			frag.appendChild(div);
+		}
+		logListEl.textContent = '';
+		logListEl.appendChild(frag);
+		var wrap = logListEl.parentNode;
+		if (wrap) wrap.scrollTop = wrap.scrollHeight;
+	}
+
+	function clearLog() {
+		GAME_LOG.length = 0;
+		renderLog();
+	}
+
+	function buildLogPanel() {
+		var panel = document.createElement('div');
+		panel.id = 'mobile-log';
+		panel.className = 'mobile-log';
+		panel.hidden = true;
+		// 基础布局内联（可见即可用）；视觉精修交给 engineer-2 的 CSS
+		panel.style.position = 'fixed';
+		panel.style.left = '8px';
+		panel.style.right = '8px';
+		panel.style.bottom = 'calc(var(--m-navbar-h, 60px) + 64px)';
+		panel.style.maxHeight = '30vh';
+		panel.style.zIndex = '20040';
+		panel.style.display = 'flex';
+		panel.style.flexDirection = 'column';
+		panel.style.background = 'rgba(20,18,15,0.97)';
+		panel.style.border = '1px solid #423b33';
+		panel.style.borderRadius = '10px';
+		panel.style.overflow = 'hidden';
+		panel.style.fontSize = '12px';
+
+		var head = document.createElement('div');
+		head.className = 'ml-head';
+		head.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:6px 8px;border-bottom:1px solid #423b33;';
+		var title = document.createElement('span');
+		title.className = 'ml-title';
+		title.textContent = '游戏日志';
+		title.style.fontWeight = '600';
+		var clearBtn = document.createElement('button');
+		clearBtn.type = 'button';
+		clearBtn.className = 'ml-clear';
+		clearBtn.textContent = '清空';
+		clearBtn.style.cssText = 'border:1px solid #423b33;background:#26221e;color:#e8e6e3;border-radius:6px;padding:2px 10px;min-height:28px;';
+		clearBtn.addEventListener('click', clearLog);
+		head.appendChild(title);
+		head.appendChild(clearBtn);
+
+		var wrap = document.createElement('div');
+		wrap.className = 'ml-list-wrap';
+		wrap.style.cssText = 'overflow-y:auto;-webkit-overflow-scrolling:touch;flex:1 1 auto;min-height:0;';
+		logListEl = document.createElement('div');
+		logListEl.className = 'ml-list';
+		logListEl.style.padding = '4px 6px';
+		wrap.appendChild(logListEl);
+
+		panel.appendChild(head);
+		panel.appendChild(wrap);
+		return panel;
+	}
+
+	// 每 2 秒采样一次性能（MSPT / 近似 FPS / 频率 / DOM 数）
+	function samplePerfLog() {
+		var mspt = getMspt();
+		var rate = getUpdatingRate();
+		var dom = document.getElementsByTagName('*').length;
+		var fps = (mspt !== null && rate !== null) ? Math.round(1000 / Math.max(mspt, rate)) : null;
+		addLog('info', '性能',
+			'MSPT=' + (mspt === null ? '--' : mspt.toFixed(1) + 'ms') +
+			' FPS≈' + (fps === null ? '--' : fps) +
+			' 频率=' + (rate === null ? '--' : rate + 'ms') +
+			' DOM=' + dom);
+	}
+
+	// 捕获运行时错误与未处理的 Promise 拒绝
+	function setupLogErrorHooks() {
+		window.addEventListener('error', function (e) {
+			addLog('error', '错误', (e.message || (e.error && e.error.message) || '未知错误') +
+				(e.filename ? ' @' + e.filename + ':' + e.lineno : ''));
+		});
+		window.addEventListener('unhandledrejection', function (e) {
+			var r = e.reason;
+			addLog('error', 'Promise', (r && r.message) ? r.message : String(r));
+		});
+	}
+
+	// 无响应检测：点击可交互元素后 500ms，若游戏主循环 gameruntime 未推进 → 记 warn
+	// （gameruntime 每个 tick 都会累加；冻结说明主线程被阻塞，正是「所有按钮失效」的根因信号）
+	function setupUnresponsiveDetect() {
+		document.addEventListener('click', function (e) {
+			var t = e.target;
+			if (!t || typeof t.closest !== 'function') return;
+			var btn = t.closest('button, .treeNode, .tabButton, .mnav-item, .mq-item, .opt, .mp-btn');
+			if (!btn) return;
+			if (typeof btn.closest === 'function' && btn.closest('#mobile-log')) return;
+			var label = (btn.className && btn.className.toString ? btn.className.toString().slice(0, 30) : '') ||
+				btn.id || (btn.textContent || '').slice(0, 20);
+			var snap = (typeof gameruntime !== 'undefined') ? gameruntime : null;
+			if (snap === null || typeof snap !== 'number') return;
+			(function (snap, label) {
+				setTimeout(function () {
+					var now = (typeof gameruntime !== 'undefined') ? gameruntime : null;
+					if (typeof now === 'number' && now === snap) {
+						addLog('warn', '无响应', '点击「' + label + '」后 500ms 游戏主循环未推进（疑似主线程阻塞）');
+					}
+				}, 500);
+			})(snap, label);
+		}, true);
+	}
+
+	// 页面切换检测（在 syncContentState 里比较 player.tab）
+	function trackTabChange() {
+		var p = window.player;
+		var tab = p ? String(p.tab) : '';
+		if (logLastTab !== null && tab !== logLastTab) addLog('info', '页面', '切换到 ' + tab);
+		logLastTab = tab;
+	}
+
+	// ---------- C：包装 importSave，清理 BOM/空白并记录各环节诊断 ----------
+	function cleanSaveString(s) {
+		if (typeof s !== 'string') return s;
+		return s.replace(/^\uFEFF/, '').replace(/^[\s\r\n]+/, '').replace(/[\s\r\n]+$/, '');
+	}
+
+	function patchImportSave() {
+		if (typeof window.importSave !== 'function' || window.importSave.__mLogged) return;
+		var orig = window.importSave;
+		var wrapped = function (imported, forced) {
+			// prompt 版（无参数）直接交给游戏弹输入框
+			if (imported === undefined) return orig(imported, forced);
+			var cleaned = cleanSaveString(imported);
+			var before = window.player ? String(window.player.points) : null;
+			var prefixOk = (typeof cleaned === 'string' && cleaned.startsWith('N4IgLggh'));
+			var decompressOk = false, parseOk = false, diagErr = '';
+			if (prefixOk) {
+				try {
+					var d = (typeof LZString !== 'undefined') ? LZString.decompressFromBase64(cleaned) : '';
+					decompressOk = !!d;
+					if (decompressOk) { JSON.parse(d); parseOk = true; }
+				} catch (err) { diagErr = String(err); }
+			}
+			var ok = prefixOk && decompressOk && parseOk;
+			addLog(ok ? 'info' : 'error', '导入',
+				'校验=' + (prefixOk ? '过' : '败') + ' 解压=' + (decompressOk ? '过' : '败') +
+				' 解析=' + (parseOk ? '过' : '败') + (diagErr ? ' ' + diagErr : '') +
+				(before !== null ? '（导入前经验=' + before + '）' : ''));
+			// 交给游戏原始逻辑（校验通过会 save + reload；失败会 alert）
+			return orig(cleaned, forced);
+		};
+		wrapped.__mLogged = true;
+		window.importSave = wrapped;
+	}
+
 	function init() {
 		document.body.classList.add('is-mobile');
 
@@ -975,17 +1176,24 @@
 		quicknav = buildQuicknav();
 		perfPanel = buildPerfPanel();
 		backButton = buildBackButton();
+		logPanel = buildLogPanel();
 		document.body.appendChild(statusbar);
 		document.body.appendChild(navbar);
 		document.body.appendChild(quicknav);
 		document.body.appendChild(perfPanel);
 		document.body.appendChild(backButton);
+		document.body.appendChild(logPanel);
 
 		// 包装树连线绘制，跳过被折叠隐藏的节点
 		patchTreeCanvas();
 		// 新闻条平滑滚动 + 二级页独立滚动位置
 		patchNewsScroll();
 		patchSubtabScroll();
+		// 游戏日志：错误钩子 + 无响应检测 + 导入诊断包装
+		setupLogErrorHooks();
+		setupUnresponsiveDetect();
+		patchImportSave();
+		setInterval(samplePerfLog, 2000);
 
 		document.addEventListener('touchstart', onTouchStartForTooltip, { passive: true });
 		// BUG#1 触屏点击兜底：记录触摸起点 / touchend 补点击 / click 去重标记
@@ -996,9 +1204,15 @@
 		// 用户交互后立即同步导航状态（Vue 重渲染后），另有慢速轮询兜底
 		document.addEventListener('click', function () { setTimeout(syncContentState, 0); });
 		document.addEventListener('touchend', function () { setTimeout(syncContentState, 0); });
-		setInterval(syncContentState, 400);
-		setInterval(updateStatusbar, 250);
-		// 性能面板读数用独立 500ms 定时器（不塞进 400ms 的 syncContentState）
+		setInterval(syncContentState, 1000);
+		// 状态栏刷新频率跟随游戏更新频率（updatingRate），与游戏 tick 同步，不再固定 250ms
+		(function scheduleStatusbar() {
+			updateStatusbar();
+			var delay = 250;
+			try { if (typeof options !== 'undefined' && options && typeof options.updatingRate === 'number') delay = Math.max(15, options.updatingRate); } catch (e) { /* 忽略 */ }
+			setTimeout(scheduleStatusbar, delay);
+		})();
+		// 性能面板读数用独立 500ms 定时器（不塞进 syncContentState）
 		setInterval(updatePerfPanel, 500);
 
 		// 树结构变化时立即补折叠表头
