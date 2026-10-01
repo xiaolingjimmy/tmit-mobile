@@ -1,0 +1,1824 @@
+/* ==========================================================================
+   挖矿增量页 (TMIT) — 移动端原生 UI 重设计 · 暗色矿洞视觉精修
+   --------------------------------------------------------------------------
+   本文件为 1:1 移植的移动端界面层，对 UI 做「移动原生 + 暗色矿洞」重设计：
+   - 卡片化按钮 / 底部导航栏 / 顶部状态栏 / 分段子页签 / 大触控目标；
+   - 岩壁层理质感 / 矿脉微光 / 工业标牌式信息层级；
+   - 只重做外观与排版，绝不改动任何游戏数值 / 文案 / 进度条时间 / 流程。
+   桌面端完全不受影响：
+   - 布局与组件重设计统一包在 @media (max-width: 768px) 内；
+   - 触屏 tooltip 兜底包在 .is-mobile 作用域内（由 js/mobile.js 添加）。
+   注入式组件（.mobile-statusbar / .mobile-navbar / .mobile-quicknav）
+   默认 display:none，仅在窄屏媒体查询内展开，保证宽屏触屏设备不出现多余浮层。
+
+   设计令牌（--m-*）说明：
+   - 基础层全部使用「静态实色」，保证任何浏览器都能渲染；
+   - 由主题变量派生的 color-mix() 值整层放进 @supports 内，做渐进增强；
+   - 主题色由 js/utils/themes.js 通过 body.style.setProperty 注入
+     （--background / --color / --points / --locked），故本文件的中性色
+     全部从 --background / --color 派生 → 深/浅主题自动适配。
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   触屏 tooltip 兜底（无 hover 的设备）：mobile.js 在 tap 时给
+   .tooltipBox 加 .tooltip-show，此处让其显示。作用域用 .is-mobile，
+   不依赖屏幕宽度（宽屏触屏设备同样需要 tap 显示 tooltip）。
+   -------------------------------------------------------------------------- */
+.is-mobile .tooltipBox.tooltip-show .tooltip {
+	opacity: 1 !important;
+}
+
+/* 注入式移动组件默认隐藏，仅在窄屏媒体查询内可见 */
+.mobile-statusbar,
+.mobile-navbar {
+	display: none;
+}
+
+/* 设置页快捷入口面板：默认隐藏（同状态栏 / 导航栏，仅窄屏展开），
+   避免宽屏触屏设备上注入后出现未样式化浮层 */
+.mobile-quicknav {
+	display: none;
+}
+
+/* 设置页性能面板（注入式，紧随快捷条下方）：默认隐藏，理由同上 */
+.mobile-perf {
+	display: none;
+}
+
+/* ==========================================================================
+   窄屏（手机竖屏 / 小窗）布局 —— 移动原生重设计
+   ========================================================================== */
+@media (max-width: 768px) {
+
+	/* ======================================================================
+	   0. 设计令牌 —— 暗色矿洞（.is-mobile 作用域）
+	   ----------------------------------------------------------------------
+	   基础层：静态实色（默认深色主题的取值）。color-mix() 派生值见下方
+	   @supports 块，仅在现代浏览器生效。
+	   ====================================================================== */
+	.is-mobile {
+		/* 岩壁层理（由浅到深：页面 → 凹陷 → 卡片 → 抬升） */
+		--m-rock-900: var(--background, #0f0f0f);   /* 基岩 = 页面底 */
+		--m-rock-800: #14120f;                      /* 凹陷井 / 锁定底 */
+		--m-rock-700: #1c1916;                      /* 卡片面 */
+		--m-rock-600: #26221e;                      /* 抬升面 / 交互面 */
+		--m-rock-500: #332d26;                      /* 最亮岩面 */
+
+		/* 发丝分隔线 */
+		--m-line: #423b33;
+		--m-line-soft: #2b2620;
+
+		/* 文本层级 */
+		--m-text-1: var(--color, #dfdfdf);
+		--m-text-2: #b7b0a4;
+		--m-text-3: #8f887c;
+
+		/* 矿脉微光（暖铜，替代纯白霓虹） */
+		--m-vein: #c98a3c;
+		--m-vein-hi: #e8b25a;
+		--m-vein-soft: #6b4a1f;
+
+		/* 状态色（中亮度色块 + 固定深字，双主题通用） */
+		--m-ok: #6f9e57;      /* 已购买 / 完成 */
+		--m-warn: #c98a3c;    /* 可操作 / 矿脉 */
+		--m-danger: #b5543f;  /* 过期 / 重置 */
+		--m-ink: #17140f;     /* 色块上的深字 */
+
+		/* 光晕 / 阴影（禁用白色霓虹） */
+		--m-glow: 0 0 0 1px rgba(201, 138, 60, 0.55), 0 0 20px -8px #e8b25a;
+		--m-shade-1: 0 1px 0 rgba(0, 0, 0, 0.35), 0 2px 6px rgba(0, 0, 0, 0.30);
+		--m-shade-2: 0 6px 18px -8px rgba(0, 0, 0, 0.55);
+		--m-bevel: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+
+		/* 间距刻度（4pt） */
+		--m-sp-1: 4px;
+		--m-sp-2: 8px;
+		--m-sp-3: 12px;
+		--m-sp-4: 16px;
+		--m-sp-5: 20px;
+		--m-sp-6: 24px;
+		--m-sp-7: 32px;
+
+		/* 圆角刻度 */
+		--m-r-1: 8px;
+		--m-r-2: 12px;
+		--m-r-3: 16px;
+		--m-r-pill: 999px;
+
+		/* 字阶（锚定正文 18px，向上/下各留清晰台阶） */
+		--m-fs-1: 12px;   /* 元信息 / 计数 / 成就格 */
+		--m-fs-2: 14px;   /* 标签 / 页签 / 设置项 */
+		--m-fs-3: 16px;   /* 卡片标题 */
+		--m-fs-4: 18px;   /* 正文 */
+		--m-fs-5: 22px;   /* 区块标题 */
+		--m-fs-6: 28px;   /* 主数值 */
+		--m-lh-tight: 1.25;
+		--m-lh-body: 1.5;
+
+		/* 动效（指数缓动 + 100/300/500 时长规则） */
+		--m-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+		--m-ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+		--m-dur-fast: 120ms;
+		--m-dur-base: 200ms;
+		--m-dur-slow: 320ms;
+
+		/* 结构常量 */
+		--m-statusbar-h: calc(56px + env(safe-area-inset-top));
+		--m-navbar-h: calc(60px + env(safe-area-inset-bottom));
+		/* 设置页性能面板高度：.col2 的 padding-top 依此推算（状态栏 56 + 快捷条 56 + 面板 + safe-area） */
+		--m-perf-h: 100px;
+		--m-tap: 44px;
+	}
+
+	/* 现代浏览器：中性色改为从主题变量派生 → 深/浅主题自动适配。
+	   放在 @supports 内，旧浏览器直接使用上面的静态实色。 */
+	@supports (color: color-mix(in oklab, red, blue)) {
+		.is-mobile {
+			--m-rock-800: color-mix(in oklab, var(--background, #0f0f0f) 92%, var(--color, #dfdfdf) 8%);
+			--m-rock-700: color-mix(in oklab, var(--background, #0f0f0f) 86%, var(--color, #dfdfdf) 14%);
+			--m-rock-600: color-mix(in oklab, var(--background, #0f0f0f) 78%, var(--color, #dfdfdf) 22%);
+			--m-rock-500: color-mix(in oklab, var(--background, #0f0f0f) 68%, var(--color, #dfdfdf) 32%);
+			--m-line: color-mix(in oklab, var(--background, #0f0f0f) 60%, var(--color, #dfdfdf) 40%);
+			--m-line-soft: color-mix(in oklab, var(--background, #0f0f0f) 80%, var(--color, #dfdfdf) 20%);
+			--m-text-2: color-mix(in oklab, var(--color, #dfdfdf) 80%, var(--background, #0f0f0f) 20%);
+			--m-text-3: color-mix(in oklab, var(--color, #dfdfdf) 62%, var(--background, #0f0f0f) 38%);
+		}
+	}
+
+	/* ======================================================================
+	   0.1 字体 —— 用户要求改为宋体
+	   ----------------------------------------------------------------------
+	   游戏字体链路：js/utils/options.js 用 body.style.setProperty('--font', …)
+	   以「内联普通声明」写入 --font，全站 font-family: var(--font) 使用它。
+	   内联普通声明优先级低于样式表中的 !important 声明，故这里用 !important
+	   覆盖 body 的内联 --font（.is-mobile 由 mobile.js 加在 body 上）。
+	   平台兜底：SimSun(Windows 宋体) → Songti SC / STSong(iOS·macOS 宋体)
+	   → Noto Serif CJK SC / Source Han Serif SC(Android·Linux 明体) → serif。
+	   另有 3 处游戏把字体写死为 cursive（systemComponents.js:31 子页签按钮、
+	   systemComponents.js:109 树节点符号 span 的内联 style；tree-node.css:55
+	   的 .treeButton），光改 --font 盖不住，一并显式覆盖。
+	   ====================================================================== */
+	.is-mobile {
+		--font: SimSun, "Songti SC", STSong, "Noto Serif CJK SC",
+			"Source Han Serif SC", "AR PL UMing CN", "AR PL UKai CN", serif !important;
+	}
+
+	/* 覆盖游戏写死的 cursive（内联 style 与 tree-node.css） */
+	.is-mobile [style*="font-family: cursive"],
+	.is-mobile .treeButton,
+	.is-mobile #treeTab .treeNode span {
+		font-family: var(--font) !important;
+	}
+
+	/* ---------------- 全局触屏与滚动行为 ---------------- */
+	* {
+		-webkit-tap-highlight-color: transparent;
+	}
+
+	/* 所有可交互元素禁用双击缩放判定，消除 iOS 300ms 点按延迟导致的偶发失效 */
+	.is-mobile .upg, .is-mobile .buyable, .is-mobile .treeNode, .is-mobile .tabButton,
+	.is-mobile .opt, .is-mobile .reset, .is-mobile .milestone, .is-mobile .achievement,
+	.is-mobile .mq-item, .is-mobile .mnav-item, .is-mobile .m-tree-head, .is-mobile .mobile-back {
+		touch-action: manipulation;
+	}
+
+	html,
+	body {
+		overscroll-behavior: none;
+		overflow-x: hidden !important;
+	}
+
+	/* 防止 iOS 聚焦输入框时自动放大 */
+	input,
+	select,
+	textarea {
+		font-size: 16px;
+	}
+
+	/* ---------------- 单栏布局重排 ---------------- */
+	#app {
+		column-count: 1 !important;
+	}
+
+	.col,
+	.col2 {
+		width: 100% !important;
+		left: 0 !important;
+		height: 100vh;
+		height: 100dvh;
+		min-height: 100dvh;
+		box-sizing: border-box;
+		padding-top: calc(56px + env(safe-area-inset-top));
+		padding-bottom: calc(60px + env(safe-area-inset-bottom));
+		overflow-x: hidden !important;
+		-webkit-overflow-scrolling: touch;
+	}
+
+	.fullWidth {
+		width: 100% !important;
+		height: 100dvh;
+		min-height: 100dvh;
+		box-sizing: border-box;
+		padding-top: calc(56px + env(safe-area-inset-top));
+		padding-bottom: calc(60px + env(safe-area-inset-bottom));
+	}
+
+	/* 打开某层级时隐藏底层树面板（类名由 mobile.js 维护） */
+	.is-mobile.mobile-content-open .col {
+		display: none !important;
+	}
+
+	/* 双栏分隔线隐藏 */
+	.vl {
+		display: none !important;
+	}
+
+	/* 横向分隔线（.vl2/.vl3/.vlBlock，游戏用 width: max(100%, 960px)）在窄屏收窄到视口宽，
+	   否则 960px 绝对定位让 .col2 横向滚动到 960px（用户报「右滑大片空白」） */
+	.vl2,
+	.vl3,
+	.vlBlock {
+		width: 100% !important;
+		max-width: 100vw !important;
+	}
+
+	/* 右上角小层级按钮下移，避开状态栏 */
+	.sideLayers {
+		top: calc(64px + env(safe-area-inset-top));
+		right: 8px;
+	}
+
+	/* 原生 .res 信息栏被顶部状态栏取代（若 mobile.js 失效则回退显示） */
+	.is-mobile .res {
+		display: none !important;
+	}
+
+	/* 滚动新闻条宽度适配 + 岩面质感 */
+	.news {
+		width: 100% !important;
+		max-width: 100vw;
+		box-sizing: border-box;
+		height: 30px !important;
+		line-height: 20px;
+		border-color: var(--m-line) !important;
+		background-color: var(--m-rock-800) !important;
+		color: var(--m-text-2) !important;
+	}
+
+	/* 新闻滚动由 mobile.js 的 rAF 以 transform 平滑驱动，故忽略游戏的 left 内联值、
+	   并提示 GPU 合成，避免按游戏 tick 离散更新造成的观感发跳 */
+	.newsContent {
+		left: 0 !important;
+		will-change: transform;
+	}
+
+	/* ---------------- 岩壁层理：极低对比的横向层理 + 顶部矿脉微光 ---------------- */
+	/* 纯 CSS，不引入任何图片；对比刻意压到最低，只提供「材质感」而非条纹感 */
+	.col,
+	.col2 {
+		background-color: var(--m-rock-900);
+		background-image:
+			repeating-linear-gradient(180deg,
+				var(--m-rock-800) 0,
+				var(--m-rock-800) 1px,
+				transparent 1px,
+				transparent 46px),
+			radial-gradient(130% 55% at 50% -8%,
+				rgba(232, 178, 90, 0.055),
+				transparent 60%);
+		background-attachment: local, local;
+	}
+
+	/* ---------------- 版本号（顶部右侧，悬浮于状态栏之上） ---------------- */
+	#version {
+		top: calc(10px + env(safe-area-inset-top));
+		right: 10px;
+		font-size: 12px;
+		z-index: 21000;
+		mix-blend-mode: normal;
+		background: var(--m-rock-600);
+		padding: 4px 8px;
+		border-radius: var(--m-r-pill);
+		color: var(--m-text-2);
+		text-shadow: none;
+		font-weight: 700;
+		font-variant-numeric: tabular-nums;
+	}
+
+	/* ---------------- 顶部状态栏 ---------------- */
+	.mobile-statusbar {
+		display: flex;
+		flex-direction: column;
+		position: fixed;
+		top: 0;
+		left: 0;
+		right: 0;
+		height: var(--m-statusbar-h);
+		padding: 3px 8px;
+		padding-top: env(safe-area-inset-top);
+		box-sizing: border-box;
+		align-items: center;
+		justify-content: center;
+		gap: 0;
+		background: var(--m-rock-800);
+		box-shadow: var(--m-bevel);
+		border-bottom: 1px solid var(--m-line);
+		z-index: 20000;
+		color: var(--m-text-1);
+		font-size: var(--m-fs-1);
+	}
+
+	.mobile-back {
+		display: none;
+		flex: 0 0 auto;
+		width: 44px;
+		height: 44px;
+		align-items: center;
+		justify-content: center;
+		border-radius: var(--m-r-2);
+		border: 1px solid var(--m-line);
+		background: var(--m-rock-600);
+		color: var(--m-text-1);
+		font-size: 22px;
+		line-height: 1;
+		cursor: pointer;
+		touch-action: manipulation;
+	}
+
+	.is-mobile.mobile-content-open .mobile-back {
+		display: flex;
+	}
+
+	.msb-stats {
+		flex: 0 1 auto;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 0;
+		line-height: 1.3;
+		overflow: hidden;
+		white-space: nowrap;
+		text-align: center;
+		min-width: 0;
+		font-variant-numeric: tabular-nums;
+	}
+
+	.msb-stats > span {
+		flex: 0 1 auto;
+		max-width: 100%;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+
+	.msb-exp {
+		color: var(--m-vein-hi);
+	}
+
+	.msb-lv {
+		color: var(--m-text-1);
+	}
+
+	.msb-progress {
+		color: var(--m-text-2);
+	}
+
+	/* ---------------- 底部导航栏 ---------------- */
+	.mobile-navbar {
+		display: flex;
+		position: fixed;
+		bottom: 0;
+		left: 0;
+		right: 0;
+		height: var(--m-navbar-h);
+		padding-bottom: env(safe-area-inset-bottom);
+		box-sizing: border-box;
+		background: var(--m-rock-800);
+		box-shadow: var(--m-bevel);
+		border-top: 1px solid var(--m-line);
+		z-index: 20000;
+	}
+
+	.mnav-item {
+		position: relative;
+		flex: 1 1 0;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		gap: 2px;
+		background: transparent;
+		border: none;
+		color: var(--m-text-3);
+		font-size: var(--m-fs-1);
+		font-weight: 600;
+		cursor: pointer;
+		touch-action: manipulation;
+		transition-duration: var(--m-dur-fast);
+		transition-timing-function: var(--m-ease-out);
+	}
+
+	.mnav-icon {
+		font-size: 20px;
+		line-height: 1;
+	}
+
+	.mnav-item.active {
+		color: var(--m-text-1);
+	}
+
+	.mnav-item.active .mnav-icon {
+		transform: scale(1.1);
+	}
+
+	.mnav-item.active::before {
+		content: "";
+		position: absolute;
+		top: 0;
+		left: 50%;
+		transform: translateX(-50%);
+		width: 28px;
+		height: 3px;
+		border-radius: 0 0 3px 3px;
+		background: var(--m-vein-hi);
+	}
+
+	.mnav-item:active {
+		transform: scale(0.94);
+	}
+
+	/* ---------------- 层级节点 .treeNode ---------------- */
+	.treeNode {
+		width: 100% !important;
+		max-width: 100% !important;
+		height: auto !important;
+		min-height: 56px !important;
+		border-radius: var(--m-r-2) !important;
+		font-size: var(--m-fs-3) !important;
+		font-weight: 600;
+		margin: 5px 0 !important;
+		left: 0 !important;
+		top: 0 !important;
+		padding: 8px 12px !important;
+		box-sizing: border-box;
+		text-align: left !important;
+		overflow: hidden;
+		border: 2px solid var(--m-line) !important;
+		box-shadow: inset 6px 0 0 rgba(0, 0, 0, 0.16), var(--m-shade-1) !important;
+		transition-duration: var(--m-dur-base);
+		transition-timing-function: var(--m-ease-out);
+	}
+
+	.treeNode.small {
+		min-height: 44px !important;
+		font-size: var(--m-fs-2) !important;
+		text-align: center !important;
+	}
+
+	.treeNode.locked {
+		filter: grayscale(0.7) opacity(0.55);
+	}
+
+	.treeNode.can.active {
+		outline: 2px solid var(--m-vein-hi);
+		outline-offset: 1px;
+	}
+
+	/* ---------------- 升级 / 点击 / 购买 / 成就 / 网格容器 ---------------- */
+	/* 真实 DOM 为 .upgRow > div(无类名列包裹) > .upgAlign > 组件，
+	   故真正的 flex 项是那个无类名列包裹 div，而非 .upgAlign。
+	   默认两列卡片（升级 / 购买 / 点击共用） */
+	.upgRow > div:has(> .upgAlign) {
+		flex: 0 0 48%;
+		max-width: 48%;
+		margin: 5px 1%;
+		box-sizing: border-box;
+	}
+
+	/* 成就改为 4 列小方块（:has 不支持时退回两列，仍可用） */
+	.upgRow > div:has(> .upgAlign > .achievement) {
+		flex: 0 0 22%;
+		max-width: 22%;
+		margin: 6px 1.4%;
+	}
+
+	/* 网格 tile 保持固定尺寸 */
+	.upgRow > div:has(> .upgAlign > .tile) {
+		flex: 0 0 auto;
+		max-width: none;
+		margin: 3px;
+	}
+
+	/* ---------------- 升级 .upg ---------------- */
+	.upg {
+		width: 100% !important;
+		min-height: 96px !important;
+		height: auto !important;
+		border-radius: var(--m-r-2) !important;
+		font-size: var(--m-fs-1);
+		padding: 8px !important;
+		margin: 0 !important;
+		box-sizing: border-box;
+		overflow: hidden;
+		text-align: center;
+		transition-duration: var(--m-dur-fast);
+		transition-timing-function: var(--m-ease-out);
+	}
+
+	.upg h3,
+	.upg h2 {
+		font-size: var(--m-fs-2) !important;
+		margin: 0 !important;
+	}
+
+	.upg.can {
+		box-shadow: var(--m-glow), var(--m-shade-1) !important;
+		border-color: var(--m-vein-hi) !important;
+	}
+
+	.upg.locked {
+		background-color: var(--m-rock-800) !important;
+		color: var(--m-text-3) !important;
+	}
+
+	.upg.bought {
+		border-color: var(--m-ok) !important;
+		background-image: linear-gradient(rgba(111, 158, 87, 0.22), rgba(111, 158, 87, 0.22)) !important;
+	}
+
+	.upg.expired {
+		text-decoration: line-through;
+		text-decoration-color: var(--m-danger);
+		color: var(--m-text-2) !important;
+	}
+
+	/* 点击项复用 .upg，但更醒目（通过 id 前缀区分） */
+	.upg[id^="clickable-"] {
+		min-height: 140px !important;
+		border-radius: var(--m-r-3) !important;
+		font-size: var(--m-fs-1) !important;
+	}
+
+	/* ======================================================================
+	   点击项按「游戏内联宽度」分级
+	   ----------------------------------------------------------------------
+	   游戏为每个 clickable 用内联 style 指定了设计尺寸（如翻页键 width:50px、
+	   动作按钮 width:120px、道具按钮 width:210px）。移动端此前用
+	   `.upg{width:100%!important}` + 48% 包裹层无差别覆盖，导致 50px 的翻页键
+	   被拉成 173px、120px 的「取消合成」被挤成 25px。
+	   这里按内联 (width, min-height) 组合精确识别「控件类」clickable 并恢复其
+	   设计尺寸；面板/道具类（>150px：210px 道具按钮、128px 像素图标等）保持
+	   现有 48% 两列卡片，一律不动。
+	   用双属性子串匹配 → 只命中目标组合，避免误伤「同宽度但不同 min-height」
+	   的像素图标（例如 128px→128/96px、80px→80px 的方块）。
+	   ====================================================================== */
+
+	/* 控件类 clickable 的包裹层：不再占 48% 道具位，按内容自适应 */
+	.upgRow > div:has(> .upgAlign > .upg[id^="clickable-"][style*="width: 50px"][style*="min-height: 50px"]),
+	.upgRow > div:has(> .upg[id^="clickable-"][style*="width: 50px"][style*="min-height: 50px"]),
+	.upgRow > div:has(> .upgAlign > .upg[id^="clickable-"][style*="width: 80px"][style*="min-height: 40px"]),
+	.upgRow > div:has(> .upg[id^="clickable-"][style*="width: 80px"][style*="min-height: 40px"]),
+	.upgRow > div:has(> .upgAlign > .upg[id^="clickable-"][style*="width: 90px"][style*="min-height: 48px"]),
+	.upgRow > div:has(> .upg[id^="clickable-"][style*="width: 90px"][style*="min-height: 48px"]),
+	.upgRow > div:has(> .upgAlign > .upg[id^="clickable-"][style*="width: 120px"][style*="min-height: 50px"]),
+	.upgRow > div:has(> .upg[id^="clickable-"][style*="width: 120px"][style*="min-height: 50px"]),
+	.upgRow > div:has(> .upgAlign > .upg[id^="clickable-"][style*="width: 150px"][style*="min-height: 50px"]),
+	.upgRow > div:has(> .upg[id^="clickable-"][style*="width: 150px"][style*="min-height: 50px"]) {
+		flex: 0 0 auto !important;
+		max-width: none !important;
+		/* 4px 全向外边距会把一行里的多个控件顶到换行（翻页行 5 项 margin-box
+		   406 > 容器 390 → >> 掉到第二行）。横向收到 2px，纵向仍留 2px。 */
+		margin: 2px 2px !important;
+	}
+
+	/* 控件包裹层内 .upgAlign 的左右外边距（游戏默认 0 7px）收紧为 0。
+	   实测 .upgAlign 为 padding:0 / margin:0 7px —— 因此要改的是 margin，
+	   不是 padding。每个控件省下 14px，翻页行再省 70px。 */
+	.upgRow > div:has(> .upgAlign > .upg[id^="clickable-"][style*="width: 50px"][style*="min-height: 50px"]) > .upgAlign,
+	.upgRow > div:has(> .upgAlign > .upg[id^="clickable-"][style*="width: 80px"][style*="min-height: 40px"]) > .upgAlign,
+	.upgRow > div:has(> .upgAlign > .upg[id^="clickable-"][style*="width: 90px"][style*="min-height: 48px"]) > .upgAlign,
+	.upgRow > div:has(> .upgAlign > .upg[id^="clickable-"][style*="width: 120px"][style*="min-height: 50px"]) > .upgAlign,
+	.upgRow > div:has(> .upgAlign > .upg[id^="clickable-"][style*="width: 150px"][style*="min-height: 50px"]) > .upgAlign {
+		margin-left: 0 !important;
+		margin-right: 0 !important;
+	}
+
+	/* 一级 小控件（翻页箭头 << < > >>、保存/导入、小彩蛋）：紧凑胶囊 */
+	.upg[id^="clickable-"][style*="width: 50px"][style*="min-height: 50px"],
+	.upg[id^="clickable-"][style*="width: 80px"][style*="min-height: 40px"],
+	.upg[id^="clickable-"][style*="width: 90px"][style*="min-height: 48px"] {
+		width: auto !important;
+		min-width: var(--m-tap) !important;
+		min-height: var(--m-tap) !important;
+		height: auto !important;
+		padding: 4px 10px !important;
+		font-size: var(--m-fs-2) !important;
+		box-sizing: border-box;
+	}
+
+	/* 二级 中控件（动作按钮 撸树/挖掘/取消合成、翻页页码、模式开关）：中等尺寸 */
+	.upg[id^="clickable-"][style*="width: 120px"][style*="min-height: 50px"],
+	.upg[id^="clickable-"][style*="width: 150px"][style*="min-height: 50px"] {
+		width: auto !important;
+		min-width: 120px !important;
+		min-height: 48px !important;
+		height: auto !important;
+		padding: 8px 16px !important;
+		font-size: var(--m-fs-3) !important;
+		box-sizing: border-box;
+	}
+
+	/* ======================================================================
+	   进度条与点击按钮纵向堆叠
+	   ----------------------------------------------------------------------
+	   ["row", [["bar", …], ["clickable", …]]] 由 row 组件渲染成
+	   `.upgTable.instant > .upgRow`，而 .upgRow 是 flex row wrap → 进度条与
+	   按钮并排。移动端改为上下堆叠（进度条在上、按钮在下）。
+	   只命中「含进度条」的 row（:has(.barBorder)），不影响其它 row 布局；
+	   作用域收窄到 .col2（.upgTable.instant 亦被 column/microtabs 使用，
+	   但那些用的是 .upgCol 而非 .upgRow，故不会被命中）。
+	   ====================================================================== */
+	.col2 .upgTable.instant > .upgRow:has(.barBorder) {
+		flex-flow: column nowrap !important;
+		align-items: stretch !important;
+		gap: var(--m-sp-2);
+	}
+
+	.col2 .upgTable.instant > .upgRow:has(.barBorder) > div,
+	.col2 .upgTable.instant > .upgRow:has(.barBorder) .upgRow > div {
+		flex: 0 0 auto !important;
+		width: 100% !important;
+		max-width: 100% !important;
+		margin: 0 !important;
+	}
+
+	/* 主操作按钮重做（用户要求「下方撸树按钮重做」）：
+	   含进度条堆叠行里的动作按钮（内联 width:120px，撸树/挖掘/寻找/取消合成）
+	   改为整宽主按钮，与进度条形成「进度条 → 主操作」的清晰层级。
+	   作用域收窄到 :has(.barBorder) 的堆叠行，不会撑宽其它页面的 120px 按钮。
+	   不动道具按钮（210px）与翻页小控件（50/150px）。 */
+	.col2 .upgTable.instant > .upgRow:has(.barBorder) .upg[id^="clickable-"]:not(#clickable-crafting_table-1001):not(#clickable-furnace-20001):not(#clickable-alloy_s-20001)[style*="width: 120px"][style*="min-height: 50px"] {
+		width: 100% !important;
+		max-width: 100% !important;
+		min-width: 0 !important;
+		min-height: 54px !important;
+		height: auto !important;
+		font-size: var(--m-fs-4) !important;
+		font-weight: 700 !important;
+		border-radius: var(--m-r-2) !important;
+		background: linear-gradient(180deg, var(--m-vein-hi) 0%, var(--m-vein) 100%) !important;
+		color: var(--m-ink) !important;
+		text-shadow: none !important;
+		border-color: var(--m-vein-hi) !important;
+		box-shadow: var(--m-shade-1), inset 0 1px 0 rgba(255, 255, 255, 0.18) !important;
+	}
+
+	/* 破坏性「取消」按钮排除出整宽主按钮（用户要求）。
+	   共 3 个，均位于含进度条的堆叠行内、内联样式与撸树完全相同
+	   （width:120px; min-height:50px），无法靠尺寸区分，只能按 id 显式排除：
+	     · clickable-crafting_table-1001 「取消合成」（游戏原文：不返还材料、丢失进度）
+	     · clickable-furnace-20001       「取消熔炼」（stopSmelting 中断，重置温度与进度）
+	     · clickable-alloy_s-20001       「取消合金」（stopAlloying 中断，重置温度与进度）
+	   做成整宽暖铜主按钮会诱导误操作，因此保持中性次要样式。 */
+	.upg[id="clickable-crafting_table-1001"],
+	.upg[id="clickable-furnace-20001"],
+	.upg[id="clickable-alloy_s-20001"] {
+		width: auto !important;
+		min-width: 120px !important;
+		max-width: 100% !important;
+		min-height: 48px !important;
+		height: auto !important;
+		padding: 8px 16px !important;
+		font-size: var(--m-fs-3) !important;
+		font-weight: 400 !important;
+		border-radius: var(--m-r-2) !important;
+		background: var(--m-rock-600) !important;
+		color: var(--m-text-2) !important;
+		text-shadow: none !important;
+		border-color: var(--m-line) !important;
+		box-shadow: none !important;
+		box-sizing: border-box;
+	}
+
+	/* ---------------- 购买项 .buyable ---------------- */
+	.buyable {
+		width: 100% !important;
+		height: auto !important;
+		min-height: 160px !important;
+		border-radius: var(--m-r-3) !important;
+		font-size: var(--m-fs-1);
+		padding: 10px !important;
+		box-sizing: border-box;
+		transition-timing-function: var(--m-ease-out);
+	}
+
+	.buyable h2 {
+		font-size: var(--m-fs-3) !important;
+	}
+
+	.buyable.can {
+		box-shadow: var(--m-glow), var(--m-shade-2) !important;
+		border-color: var(--m-vein-hi) !important;
+	}
+
+	.buyable.locked {
+		background-color: var(--m-rock-800) !important;
+		color: var(--m-text-3) !important;
+	}
+
+	.buyable.bought {
+		border-color: var(--m-ok) !important;
+	}
+
+	/* ---------------- 子页签 .tabButton（等分分段控件） ---------------- */
+	/* 等分弹性布局：任意项数（含 5~6 项）自动均分并居中，不再溢出。
+	   原实现按内容宽度排布 + justify-content:flex-start，statistics 的 6 项
+	   实测需要 458px > 容器 394px → 溢出 64px；且行本身 394 > .col2 390
+	   （content-box 下 width:100% 未含 6px 2px 的 padding）。此处：
+	   ① 行设 border-box → 总宽回到 390；
+	   ② 单元格 flex:1 1 0 → 等分（6 项各 65px），max-width 33.33% 兜底
+	      使 1~2 项时不会拉成整宽；③ 居中 justify-content:center。 */
+	.upgTable > .upgRow:has(.tabButton) {
+		flex-wrap: nowrap !important;
+		overflow: visible !important;
+		justify-content: center !important;
+		width: 100% !important;
+		max-width: 100% !important;
+		box-sizing: border-box !important;
+		padding: 6px 2px !important;
+		gap: 4px !important;
+	}
+
+	.upgTable > .upgRow:has(.tabButton) > div {
+		flex: 1 1 0 !important;
+		min-width: 0 !important;
+		max-width: 33.3333% !important;
+		margin: 0 !important;
+	}
+
+	/* 隐藏「未解锁页签」留下的空包裹层：tab-buttons 模板是
+	   <div v-for><button v-if="unlocked">…</button></div>，v-if 只移除 button，
+	   空 div 仍占 flex 等分位（statistics 实测 8 个 div 里 2 个是空的，
+	   把 6 个可见页签挤成 48px）。 */
+	.upgTable > .upgRow:has(.tabButton) > div:not(:has(.tabButton)) {
+		display: none !important;
+	}
+
+	.tabButton {
+		flex: 0 1 auto !important;
+		width: 100% !important;
+		min-width: 0 !important;
+		border-radius: var(--m-r-pill) !important;
+		padding: 8px 4px !important;
+		margin: 0 !important;
+		min-height: var(--m-tap) !important;
+		box-sizing: border-box !important;
+		border: 2px solid var(--m-line) !important;
+		border-bottom: 2px solid var(--m-line) !important;
+		background: var(--m-rock-600) !important;
+		color: var(--m-text-2) !important;
+		font-size: var(--m-fs-2) !important;
+		font-weight: 600;
+		transform: none !important;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		transition-duration: var(--m-dur-fast);
+		transition-timing-function: var(--m-ease-out);
+	}
+
+	.tabButton.AcSub {
+		background: var(--m-vein) !important;
+		color: var(--m-ink) !important;
+		text-shadow: none !important;
+		border-color: var(--m-vein-hi) !important;
+	}
+
+	/* ---------------- 声望 / 重置按钮 .reset ---------------- */
+	.reset {
+		width: 100% !important;
+		min-height: 64px !important;
+		height: auto !important;
+		border-radius: var(--m-r-3) !important;
+		font-size: var(--m-fs-2) !important;
+		padding: 10px !important;
+		margin: 8px 0 !important;
+		box-sizing: border-box;
+		transition-duration: var(--m-dur-fast);
+		transition-timing-function: var(--m-ease-out);
+	}
+
+	.reset.can {
+		background-image: linear-gradient(135deg, rgba(232, 178, 90, 0.22), rgba(0, 0, 0, 0.18)) !important;
+		box-shadow: inset 0 0 0 1000px rgba(0, 0, 0, 0.12), var(--m-shade-2) !important;
+	}
+
+	.upgRow > div:has(> .reset),
+	.upgCol > div:has(> .reset) {
+		flex: 0 0 100%;
+		max-width: 100%;
+	}
+
+	/* ---------------- 进度条 .barBase/.barBorder/.barBG/.fill ---------------- */
+	/* 只调高度 / 圆角 / 描边 / 内边距与防溢出，绝不改动 .fill 的 clip-path 进度逻辑 */
+	.barBorder,
+	.barBase,
+	.barBG {
+		border-radius: var(--m-r-1) !important;
+		min-height: 20px !important;
+		max-width: 100vw !important;
+		border-color: var(--m-line) !important;
+	}
+
+	/* 标题层（overlayTextContainer 也带 .barBorder）：加内边距防止文字贴边/被裁切；
+	   并让其横向铺满进度条容器 —— 游戏内联 width:360px 比容器/底色
+	   (.barBG 实测 364px) 窄 4px，导致文字中心比进度条中心偏左 2px。
+	   用 left/right:0 + width:auto 拉平；max-width:none 解除 100vw 上限，
+	   使其能跟随进度条在窄屏下略宽于视口的情形。 */
+	.overlayTextContainer.barBorder {
+		left: 0 !important;
+		right: 0 !important;
+		width: auto !important;
+		max-width: none !important;
+		padding: 0 var(--m-sp-3) !important;
+		border: none !important;
+		background: transparent !important;
+		min-height: 0 !important;
+		box-sizing: border-box;
+	}
+
+	/* 进度条包裹层（游戏内联 display:table，宽度由内容决定并靠 margin:auto 居中）
+	   设为定位参照：文字层改以「进度条本身」为基准居中，而非外层视口容器。
+	   窄屏（320）下进度条比视口宽 4px 时，这一步保证文字仍与进度条同心。 */
+	.col2 [style*="display: table"] {
+		position: relative !important;
+	}
+
+	.barBorder .overlayText {
+		overflow-wrap: anywhere;
+		max-width: 100%;
+	}
+
+	.fill {
+		border-radius: var(--m-r-1) !important;
+		transition-duration: var(--m-dur-base) !important;
+		transition-timing-function: var(--m-ease-out) !important;
+	}
+
+	/* ---------------- 里程碑 .milestone ---------------- */
+	.milestone,
+	.milestoneDone {
+		min-height: 64px !important;
+		height: auto !important;
+		border-radius: var(--m-r-2) !important;
+		font-size: var(--m-fs-2) !important;
+		font-weight: 600;
+		padding: 8px !important;
+		box-sizing: border-box;
+		transition-timing-function: var(--m-ease-out);
+	}
+
+	.milestone {
+		color: var(--m-ink) !important;
+	}
+
+	.milestoneDone {
+		background-color: var(--m-ok) !important;
+		color: var(--m-ink) !important;
+	}
+
+	/* ---------------- 成就 .achievement（4 列网格） ---------------- */
+	.achievement {
+		width: 100% !important;
+		height: auto !important;
+		aspect-ratio: 1 !important;
+		border-radius: var(--m-r-1) !important;
+		font-size: var(--m-fs-1) !important;
+		box-sizing: border-box;
+		background-color: var(--m-rock-600);
+		border-color: var(--m-line);
+		transition-timing-function: var(--m-ease-out);
+	}
+
+	.achievement h3 {
+		font-size: var(--m-fs-1) !important;
+		font-weight: 600;
+	}
+
+	.achievement.locked {
+		background-color: var(--m-rock-800) !important;
+		color: var(--m-text-3) !important;
+	}
+
+	.achievement.bought {
+		background-color: var(--m-ok) !important;
+		color: var(--m-ink) !important;
+	}
+
+	.achievement.secret.bought {
+		background-color: var(--m-vein) !important;
+		color: var(--m-ink) !important;
+	}
+
+	/* ---------------- 挑战 .challenge（圆角卡片） ---------------- */
+	.upgRow > div:has(.challenge) {
+		flex: 0 0 46%;
+		max-width: 46%;
+		margin: 8px 2%;
+	}
+
+	.challenge {
+		width: 100% !important;
+		height: auto !important;
+		min-height: 180px !important;
+		border-radius: var(--m-r-3) !important;
+		font-size: var(--m-fs-1) !important;
+		padding: 10px !important;
+		box-sizing: border-box;
+		transition-timing-function: var(--m-ease-out);
+	}
+
+	/* 状态底色沿用游戏默认，但把文字改为深色，保证亮底上的对比度 */
+	.challenge.done {
+		background-color: var(--m-ok) !important;
+		color: var(--m-ink) !important;
+	}
+
+	.challenge.canComplete,
+	.challenge.can {
+		background-color: var(--m-warn) !important;
+		color: var(--m-ink) !important;
+	}
+
+	.challenge .longUpg {
+		width: 100% !important;
+		min-height: 48px !important;
+		border-radius: var(--m-r-2) !important;
+	}
+
+	/* ---------------- 网格 .tile ---------------- */
+	.tile {
+		width: 64px !important;
+		height: 64px !important;
+		border-radius: var(--m-r-2) !important;
+		font-size: var(--m-fs-1) !important;
+		transition-timing-function: var(--m-ease-out);
+	}
+
+	.tile.locked {
+		background-color: var(--m-rock-800) !important;
+		color: var(--m-text-3) !important;
+	}
+
+	/* ---------------- 设置按钮 .opt（卡片化两列） ---------------- */
+	table:has(.opt) {
+		display: block !important;
+	}
+
+	table:has(.opt) tbody,
+	table:has(.opt) tr {
+		display: flex !important;
+		flex-wrap: wrap !important;
+		justify-content: center;
+		width: 100% !important;
+	}
+
+	table:has(.opt) td {
+		display: block !important;
+		flex: 0 0 46%;
+		margin: 5px 2%;
+	}
+
+	table:has(.opt) td:has(h1) {
+		flex: 0 0 100%;
+		text-align: left !important;
+	}
+
+	.opt {
+		width: 100% !important;
+		min-height: 64px !important;
+		height: auto !important;
+		border-radius: var(--m-r-2) !important;
+		font-size: var(--m-fs-2) !important;
+		font-weight: 600;
+		padding: 8px !important;
+		box-sizing: border-box;
+		color: var(--m-text-1) !important;
+		background: var(--m-rock-600) !important;
+		border-color: var(--m-line) !important;
+		transition-duration: var(--m-dur-fast);
+		transition-timing-function: var(--m-ease-out);
+	}
+
+	/* ---------------- 提示框 .tooltip ---------------- */
+	.tooltip {
+		max-width: 80vw !important;
+		width: auto !important;
+		border-radius: var(--m-r-1) !important;
+		font-size: var(--m-fs-2) !important;
+		background: var(--m-rock-700) !important;
+		border: 1px solid var(--m-line) !important;
+		color: var(--m-text-1) !important;
+		z-index: 99999 !important;
+		white-space: normal !important;
+		word-wrap: break-word;
+		overflow-wrap: break-word;
+		padding: 8px !important;
+	}
+
+	/* ---------------- 弹窗 .modal（全屏） ---------------- */
+	.modal {
+		width: 100vw !important;
+		height: 100vh !important;
+		height: 100dvh !important;
+		top: 0 !important;
+		left: 0 !important;
+		transform: none !important;
+		border-radius: 0 !important;
+		box-sizing: border-box;
+		border-color: var(--m-line) !important;
+	}
+
+	.modal-top {
+		font-size: 20px !important;
+		height: 44px !important;
+		border-bottom-color: var(--m-line) !important;
+	}
+
+	.modalButton {
+		font-size: 16px !important;
+		padding: 10px 16px !important;
+	}
+
+	.modalConfirm {
+		width: 140px !important;
+		height: 48px !important;
+		left: 50% !important;
+		transform: translateX(-50%) !important;
+		bottom: 24px !important;
+		font-size: 18px !important;
+		box-sizing: border-box;
+	}
+
+	/* ---------------- toast .popup（顶部居中） ---------------- */
+	.popup-container {
+		left: 16px !important;
+		right: auto !important;
+		width: calc(100vw - 32px) !important;
+	}
+
+	.popup {
+		width: 100% !important;
+		border-radius: var(--m-r-1) !important;
+		box-sizing: border-box;
+	}
+
+	/* ---------------- 信息框 .story ---------------- */
+	.story {
+		max-width: 100% !important;
+	}
+
+	.story-title {
+		font-size: var(--m-fs-3) !important;
+	}
+
+	/* ---------------- 其它组件兜底 ---------------- */
+	.longUpg {
+		min-height: 48px !important;
+		min-width: 120px !important;
+		height: auto !important;
+		border-radius: var(--m-r-2) !important;
+		font-size: var(--m-fs-2) !important;
+		padding: 8px 12px !important;
+		box-sizing: border-box;
+		transition-timing-function: var(--m-ease-out);
+	}
+
+	.nextLayerUpg {
+		width: 100% !important;
+		max-width: 320px !important;
+		min-height: 56px !important;
+		height: auto !important;
+		border-radius: var(--m-r-3) !important;
+		box-sizing: border-box;
+	}
+
+	.upgBig {
+		width: 100% !important;
+		max-width: 200px !important;
+		height: auto !important;
+		min-height: 120px !important;
+		border-radius: var(--m-r-2) !important;
+	}
+
+	.smallUpg {
+		min-width: 48px !important;
+		min-height: 48px !important;
+		border-radius: var(--m-r-2) !important;
+	}
+
+	.showStoryButton {
+		width: 96px !important;
+		min-height: 96px !important;
+		border-radius: 50% !important;
+	}
+
+	.automation-clickables,
+	.mysticalFlowerClickables,
+	.enemyClickables,
+	.attackClickables,
+	.battlestatusClickables,
+	.skillTree {
+		max-width: 100% !important;
+	}
+
+	/* ---------------- 通用防溢出兜底 ---------------- */
+	img,
+	canvas,
+	table {
+		max-width: 100%;
+	}
+
+	.wide480px,
+	.wide600px,
+	.wide720px {
+		max-width: 100% !important;
+	}
+
+	/* layers.js 内联固定宽度兜底（两种书写格式均覆盖） */
+	[style*="width: 960px"],
+	[style*="width:960px"],
+	[style*="width: 900px"],
+	[style*="width:900px"],
+	[style*="width: 802px"],
+	[style*="width:802px"],
+	[style*="width: 720px"],
+	[style*="width:720px"],
+	[style*="width: 600px"],
+	[style*="width:600px"],
+	[style*="width: 518px"],
+	[style*="width:518px"],
+	[style*="width: 480px"],
+	[style*="width:480px"],
+	[style*="width: 445px"],
+	[style*="width:445px"],
+	[style*="width: 420px"],
+	[style*="width:420px"],
+	[style*="width: 400px"],
+	[style*="width:400px"],
+	[style*="width: 360px"],
+	[style*="width:360px"],
+	[style*="width: 320px"],
+	[style*="width:320px"],
+	[style*="width: 300px"],
+	[style*="width:300px"] {
+		max-width: 100vw !important;
+	}
+
+	/* 撑满视口宽度：system-style.css 里 .upgTable 用 flex-flow:column wrap +
+	   align-items:center，会把 .upgRow/.upgCol 收缩到内容宽，导致卡片
+	   flex-basis:48% 相对的是「内容宽」而非视口宽。以下三条必须一起加，
+	   缺一卡片仍会缩窄到 ~105px（经 QA 浏览器实测验证）。 */
+	.upgTable {
+		width: 100% !important;
+		align-items: stretch !important;
+		max-width: 100vw;
+	}
+
+	.upgCol {
+		width: 100% !important;
+		max-width: 100vw;
+	}
+
+	.upgRow {
+		width: 100% !important;
+		max-width: 100vw;
+	}
+
+	/* ---------------- 触控目标与按压反馈 ---------------- */
+	.can,
+	.treeNode,
+	.tabButton,
+	.opt,
+	.upg,
+	.buyable,
+	.tile,
+	.reset,
+	.longUpg,
+	.nextLayerUpg,
+	.smallUpg,
+	.showStoryButton {
+		min-height: 44px;
+	}
+
+	/* 抵消桌面 hover 缩放，避免触屏「粘滞 hover」异常；
+	   同时把桌面 hover 的白色霓虹换成矿脉微光 */
+	.can:hover,
+	.tile.can:hover {
+		transform: none !important;
+		box-shadow: var(--m-glow) !important;
+	}
+
+	.achievement:hover {
+		box-shadow: var(--m-glow) !important;
+	}
+
+	.treeNode.can:not(.active):not(.small):hover {
+		transform: none !important;
+		padding-left: 12px !important;
+	}
+
+	/* 按压反馈（置于 hover 中和之后，确保 :active 优先） */
+	button:active,
+	.upg:active,
+	.buyable:active,
+	.tile:active,
+	.treeNode:active,
+	.tabButton:active,
+	.opt:active,
+	.reset:active,
+	.longUpg:active,
+	.nextLayerUpg:active,
+	.smallUpg:active,
+	.mobile-back:active {
+		transform: scale(0.96);
+	}
+
+	/* ---------------- 设置页快捷入口面板（统计 / 故事 / 地图 / 层级选择 / 信息 / 更新日志） ---------------- */
+	.mobile-quicknav {
+		display: none;
+	}
+
+	.is-mobile.mobile-tab-options .mobile-quicknav {
+		display: flex;
+		position: fixed;
+		top: calc(56px + env(safe-area-inset-top));
+		left: 0;
+		right: 0;
+		height: 56px;
+		align-items: center;
+		gap: 8px;
+		padding: 0 10px;
+		box-sizing: border-box;
+		overflow-x: auto;
+		overflow-y: hidden;
+		-webkit-overflow-scrolling: touch;
+		background: var(--m-rock-700);
+		box-shadow: var(--m-bevel);
+		border-bottom: 1px solid var(--m-line);
+		z-index: 19900;
+		scrollbar-width: none;
+	}
+
+	.is-mobile.mobile-tab-options .mobile-quicknav::-webkit-scrollbar {
+		display: none;
+	}
+
+	.mq-item {
+		flex: 0 0 auto;
+		display: inline-flex;
+		align-items: center;
+		gap: 5px;
+		min-height: var(--m-tap);
+		padding: 0 14px;
+		border-radius: var(--m-r-pill);
+		border: 1px solid var(--m-line);
+		background: var(--m-rock-600);
+		color: var(--m-text-2);
+		font-size: var(--m-fs-2);
+		font-weight: 600;
+		white-space: nowrap;
+		cursor: pointer;
+		touch-action: manipulation;
+		transition-duration: var(--m-dur-fast);
+		transition-timing-function: var(--m-ease-out);
+	}
+
+	.mq-item .mq-icon {
+		font-size: 15px;
+		line-height: 1;
+	}
+
+	.mq-item:active {
+		transform: scale(0.95);
+	}
+
+	/* 设置页内容整体下移，避免被固定快捷入口 + 性能面板遮挡
+	   （状态栏 56px + 快捷条 56px + 性能面板 --m-perf-h）。
+	   选择器特异性 (0,3,0) 高于原 .col, .col2 (0,1,0)，且带 !important，
+	   并置于媒体查询末尾（在原 .col, .col2 规则之后），确保覆盖生效。 */
+	.is-mobile.mobile-tab-options .col2 {
+		padding-top: calc(56px + 56px + var(--m-perf-h) + env(safe-area-inset-top)) !important;
+	}
+
+	/* ---------------- 设置页性能面板（注入式，第二个固定条，紧贴快捷条下方） ----------------
+	   DOM 契约（由 js/mobile.js 注入到 <body>，与 #mobile-quicknav 同级）：
+	     <div id="mobile-perf" class="mobile-perf">
+	       <div class="mp-head"><span class="mp-title"></span><span class="mp-mspt"></span><span class="mp-rate"></span></div>
+	       <div class="mp-presets"><button type="button" class="mp-btn" data-rate="50"></button>…</div>
+	       <div class="mp-hint"></div>
+	     </div>
+	   状态类：body.mobile-tab-options（与快捷条同一开关，不新增 body class）、
+	           .mobile-perf.mp-warn（MSPT > 更新频率）、.mp-btn.active（当前生效档）。
+	   位置：top = 状态栏 56 + 快捷条 56 + safe-area；高度固定 var(--m-perf-h)，
+	   故 .col2 的 padding-top 可精确等于面板底边，内容永不被遮。
+	   注：游戏全局 `* { margin: auto }` 会把每个元素外边距设为 auto，
+	   本面板所有子元素显式归零 margin，避免 flex 主轴自由空间被 auto 边距吞掉。 */
+	.is-mobile.mobile-tab-options .mobile-perf {
+		display: flex;
+		position: fixed;
+		top: calc(56px + 56px + env(safe-area-inset-top));
+		left: 0;
+		right: 0;
+		height: var(--m-perf-h);
+		flex-direction: column;
+		justify-content: center;
+		gap: 5px;
+		padding: 7px 10px;
+		margin: 0;
+		box-sizing: border-box;
+		background: var(--m-rock-800);
+		box-shadow: var(--m-bevel);
+		border-bottom: 1px solid var(--m-line);
+		z-index: 19890; /* 低于快捷条 19900；两者纵向相邻、不重叠 */
+		color: var(--m-text-2);
+		transition: border-bottom-color var(--m-dur-fast) var(--m-ease-out);
+	}
+
+	/* 顶行：标题靠左，MSPT 与更新频率靠右（tabular-nums 防读数抖动） */
+	.mp-head {
+		display: flex;
+		align-items: baseline;
+		gap: var(--m-sp-2);
+		margin: 0;
+		line-height: 1.2;
+		min-width: 0;
+	}
+
+	.mp-title {
+		margin: 0 auto 0 0; /* 推开右侧两项 */
+		font-size: var(--m-fs-2);
+		font-weight: 600;
+		color: var(--m-text-1);
+		white-space: nowrap;
+	}
+
+	.mp-mspt,
+	.mp-rate {
+		margin: 0;
+		font-variant-numeric: tabular-nums;
+		white-space: nowrap;
+	}
+
+	.mp-mspt {
+		font-size: var(--m-fs-2);
+		font-weight: 600;
+		color: var(--m-text-1);
+	}
+
+	.mp-rate {
+		font-size: var(--m-fs-1);
+		color: var(--m-text-3);
+	}
+
+	/* 预设行：等分 flex，加到 5~6 档也不溢出（与页签同一思路） */
+	.mp-presets {
+		display: flex;
+		gap: 6px;
+		margin: 0;
+		min-width: 0;
+	}
+
+	.mp-btn {
+		flex: 1 1 0;
+		min-width: 0;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		min-height: var(--m-tap); /* ≥44px 触控目标 */
+		padding: 0 4px;
+		margin: 0;
+		border: 1px solid var(--m-line);
+		border-radius: var(--m-r-pill);
+		background: var(--m-rock-600);
+		color: var(--m-text-2);
+		font-size: var(--m-fs-2);
+		font-weight: 600;
+		font-variant-numeric: tabular-nums;
+		line-height: 1;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		cursor: pointer;
+		touch-action: manipulation;
+		box-sizing: border-box;
+		transition-duration: var(--m-dur-fast);
+		transition-timing-function: var(--m-ease-out);
+	}
+
+	.mp-btn:active {
+		transform: scale(0.96);
+	}
+
+	/* 当前生效档：暖铜面 + 深字（与已批准的强调色一致） */
+	.mp-btn.active {
+		background: var(--m-vein);
+		border-color: var(--m-vein-hi);
+		color: var(--m-ink);
+		font-weight: 700;
+	}
+
+	/* 游戏日志入口按钮（位于性能面板底部） */
+	.mp-log-btn {
+		flex: 0 0 auto;
+		align-self: flex-start;
+		margin: 6px 0 0 0;
+		padding: 6px 14px;
+		min-height: var(--m-tap);
+		border: 1px solid var(--m-line);
+		border-radius: var(--m-r-pill);
+		background: var(--m-rock-600);
+		color: var(--m-text-2);
+		font-size: var(--m-fs-2);
+		font-weight: 600;
+		cursor: pointer;
+		touch-action: manipulation;
+		box-sizing: border-box;
+		transition-duration: var(--m-dur-fast);
+		transition-timing-function: var(--m-ease-out);
+	}
+
+	.mp-log-btn:active {
+		transform: scale(0.96);
+		background: var(--m-rock-500);
+		color: var(--m-text-1);
+	}
+
+	/* 提示行：平时为空不占位，有内容时才显示（单行省略） */
+	.mp-hint {
+		margin: 0;
+		font-size: var(--m-fs-1);
+		line-height: 1.2;
+		color: var(--m-text-3);
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+
+	.mp-hint:empty {
+		display: none;
+	}
+
+	/* 警示态：MSPT 高于更新频率（弱化描边 + danger 文本；禁用霓虹发光）。
+	   作用域前缀与基础规则同源并再加 .mp-warn，特异性 (0,4,0)/(0,5,0)，
+	   确保覆盖基础规则的 border-bottom 简写与 .mp-mspt 颜色。 */
+	.is-mobile.mobile-tab-options .mobile-perf.mp-warn {
+		border-bottom-color: var(--m-danger);
+	}
+
+	.is-mobile.mobile-tab-options .mobile-perf.mp-warn .mp-mspt,
+	.is-mobile.mobile-tab-options .mobile-perf.mp-warn .mp-hint {
+		color: var(--m-danger);
+	}
+
+	/* ---------------- 层级树折叠头（由 mobile.js 注入） ---------------- */
+	#treeTab .upgRow > .m-tree-head {
+		flex: 0 0 100%;
+		width: 100%;
+		max-width: 100%;
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		margin: 10px 0 4px;
+		padding: 8px 12px;
+		min-height: var(--m-tap);
+		box-sizing: border-box;
+		border: 1px solid var(--m-line);
+		border-radius: var(--m-r-2);
+		background: var(--m-rock-600);
+		color: var(--m-text-1);
+		font-size: var(--m-fs-2);
+		font-weight: bold;
+		text-align: left;
+		cursor: pointer;
+		touch-action: manipulation;
+		transition-duration: var(--m-dur-fast);
+		transition-timing-function: var(--m-ease-out);
+	}
+
+	#treeTab .upgRow > .m-tree-head .m-tree-arrow {
+		flex: 0 0 auto;
+		width: 16px;
+		color: var(--m-vein-hi);
+		opacity: 1;
+	}
+
+	#treeTab .upgRow > .m-tree-head .m-tree-label {
+		flex: 1 1 auto;
+		min-width: 0;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	#treeTab .upgRow > .m-tree-head .m-tree-count {
+		flex: 0 0 auto;
+		font-size: var(--m-fs-1);
+		font-weight: normal;
+		color: var(--m-text-3);
+		opacity: 1;
+	}
+
+	#treeTab .upgRow > .m-tree-head:active {
+		transform: scale(0.98);
+	}
+
+	/* ---------------- 通知徽标 notifyMark（树卡片上的「[!]Upg」） ---------------- */
+	/* 游戏在树节点符号 span 内注入 <notifyMark>[!]Upg</notifyMark>，默认 inline
+	   无样式 → 紧贴节点文字、挤压重叠。改为独立小徽标：留出左间距、圆角、暖铜
+	   底 + 深字。只改外观，不改其文本与语义。 */
+	.is-mobile notifyMark {
+		display: inline-block;
+		margin-left: 6px;
+		padding: 0 6px;
+		border-radius: var(--m-r-pill);
+		background: var(--m-vein);
+		color: var(--m-ink);
+		font-size: var(--m-fs-1);
+		font-weight: 700;
+		line-height: 1.6;
+		vertical-align: middle;
+		text-shadow: none;
+		box-sizing: border-box;
+	}
+
+	/* 折叠状态：隐藏该行全部层级卡片（保留折叠头本身） */
+	#treeTab .upgRow.m-collapsed > table.untable {
+		display: none !important;
+	}
+
+	/* ---------------- 隐藏已迁走的树节点（列表与 mobile.js 的 MIGRATED_LAYERS 一致） ---------------- */
+	#treeTab button#Setting,
+	#treeTab button#Information,
+	#treeTab button#Changelog,
+	#treeTab button#statistics,
+	#treeTab button#stories,
+	#treeTab button#map,
+	#treeTab button#layer_select,
+	#treeTab button#achievements,
+	#treeTab button#offline_progress,
+	#treeTab button[id="0layer"],
+	#treeTab button[id="1layer"],
+	#treeTab button#w2,
+	#treeTab button#w3,
+	#treeTab button#w4,
+	#treeTab button#w5,
+	#treeTab button#w6,
+	#treeTab button[id="2layer"],
+	#treeTab button#energy,
+	#treeTab button[id="OtherTab small"] {
+		display: none !important;
+	}
+
+	/* ======================================================================
+	   修复 1：单节点行卡片宽度缺陷
+	   ----------------------------------------------------------------------
+	   #treeTab 里 span.upgRow 是 display:flex; flex-flow:row wrap;
+	   justify-content:center，其唯一内容子项 table.untable 默认是
+	   shrink-to-fit（width:auto; max-width:100%; flex-shrink:1）。
+	   .treeNode 的 width:100% 相对这个「内容宽」形成循环依赖，
+	   导致行内可见节点少时卡片缩成 76~101px 的小方块。
+	   给表格一个确定的 flex 基准（100%），width:100% 的卡片才能撑满整行。
+	   必须用 #treeTab 作用域（升级表格的 .upgRow 不在 #treeTab 内）。
+	   ====================================================================== */
+	#treeTab .upgRow > table.untable {
+		width: 100% !important;
+		max-width: 100%;
+		flex: 1 1 100%;
+	}
+
+	/* ======================================================================
+	   修复 2：树节点 / 成就格上的「黑色鬼影」
+	   ----------------------------------------------------------------------
+	   css/TMITstyles.css 里 .treeNode::after / .achievement::after 用
+	   content:attr(...) 画解锁序号水印，文字填充被设为几乎全透明
+	   (rgba(0,0,0,0.01))，但 text-shadow: 0 1px 1px rgba(0,0,0,0.5) 仍会
+	   以字形轮廓为遮罩渲染出「偏移 1px、25px 字号、50% 黑」的深色投影，
+	   与节点符号文字叠在一起 → 就是截图里看到的文字重影。
+	   只去掉投影，保留伪元素本身与 content（不动游戏文件）。
+	   ====================================================================== */
+	.is-mobile #treeTab .treeNode::after,
+	.is-mobile .achievement::after {
+		text-shadow: none !important;
+	}
+
+	/* ======================================================================
+	   排版层级：把 system-style.css 的「全站 18px + 全站 bold + 全站居中」
+	   收敛成有台阶的层级 —— 正文常规字重、标题/数值/交互标签才加粗。
+	   ====================================================================== */
+	.col *,
+	.col2 * {
+		font-weight: 400;
+	}
+
+	.col h1,
+	.col h2,
+	.col h3,
+	.col2 h1,
+	.col2 h2,
+	.col2 h3,
+	.tabButton,
+	.opt,
+	.mnav-item,
+	.mq-item,
+	.m-tree-head,
+	.upg h2,
+	.upg h3,
+	.buyable h2,
+	.story-title,
+	.milestone,
+	.milestoneDone,
+	.achievement h3,
+	.treeNode {
+		font-weight: 600;
+	}
+
+	.col2 h1 {
+		font-size: var(--m-fs-5);
+		line-height: var(--m-lh-tight);
+	}
+
+	.col2 h2 {
+		font-size: var(--m-fs-4);
+		line-height: var(--m-lh-tight);
+	}
+
+	.col2 h3 {
+		font-size: var(--m-fs-3);
+		line-height: var(--m-lh-tight);
+	}
+
+	/* 主数值：微放大 + 等宽数字 + 暖色微光（替换原来的纯白霓虹） */
+	#points {
+		font-size: 1.15em;
+		font-weight: 700;
+		font-variant-numeric: tabular-nums;
+		text-shadow: 0 0 10px rgba(232, 178, 90, 0.55);
+	}
+
+	/* 数值型读数统一等宽，避免逐帧跳字 */
+	.msb-stats,
+	.treeNode,
+	.upg,
+	.buyable,
+	.barBorder,
+	.opt,
+	#points,
+	#version {
+		font-variant-numeric: tabular-nums;
+	}
+
+	/* ======================================================================
+	   动效统一：指数缓动（收尾利落），时长收敛到 120 / 200 / 320ms。
+	   仅使用 transform / opacity / box-shadow 等可合成属性。
+	   ====================================================================== */
+	.upg,
+	.buyable,
+	.achievement,
+	.milestone,
+	.milestoneDone,
+	.challenge,
+	.tile,
+	.longUpg,
+	.reset,
+	.opt,
+	.tabButton,
+	.treeNode,
+	.mobile-back,
+	.mnav-item,
+	.mq-item,
+	.m-tree-head {
+		transition-timing-function: var(--m-ease-out) !important;
+	}
+
+	/* 尊重系统「减弱动态效果」偏好：几乎瞬时完成，不做位移/缩放动画 */
+	@media (prefers-reduced-motion: reduce) {
+
+		.upg,
+		.buyable,
+		.achievement,
+		.milestone,
+		.milestoneDone,
+		.challenge,
+		.tile,
+		.longUpg,
+		.reset,
+		.opt,
+		.tabButton,
+		.treeNode,
+		.mobile-back,
+		.mnav-item,
+		.mq-item,
+		.m-tree-head,
+		.fill {
+			transition-duration: 0.001ms !important;
+			transition-timing-function: linear !important;
+			animation-duration: 0.001ms !important;
+		}
+
+		.mnav-item.active .mnav-icon,
+		.mnav-item:active,
+		button:active,
+		.upg:active,
+		.buyable:active,
+		.tile:active,
+		.treeNode:active,
+		.tabButton:active,
+		.opt:active,
+		.reset:active,
+		.longUpg:active,
+		.nextLayerUpg:active,
+		.smallUpg:active,
+		.mobile-back:active,
+		.mq-item:active,
+		#treeTab .upgRow > .m-tree-head:active {
+			transform: none !important;
+		}
+	}
+}
+
+
+/* ========== TMIT UI 优化补丁 v2（Adort Design Expert 8 条纯视觉优化） ========== */
+@media (max-width: 768px) {
+/* ==========================================================================
+   TMIT UI 优化补丁 v2 —— 预览版（运行时注入，仅供截图预览，未写入游戏代码）
+   基于 Adort Design Expert 的 44 张截图量化分析，8 条纯视觉优化。
+   已适配现有 DOM：树节点 .treeNode.locked、主操作按钮 .upg[id^=clickable-]、
+   分页小控件 .upg[id^=clickable-][style*=width:50px] 等。
+   ========================================================================== */
+
+/* —— 1. 树页面矿洞背景层次（修复「黑屏级空旷」） —— */
+#treeTab {
+	background:
+		radial-gradient(ellipse 80% 50% at 50% 0%, rgba(201, 138, 60, 0.07), transparent 60%),
+		radial-gradient(ellipse 60% 40% at 20% 80%, rgba(120, 90, 60, 0.06), transparent 70%),
+		radial-gradient(ellipse 60% 40% at 80% 90%, rgba(120, 90, 60, 0.06), transparent 70%),
+		#0f0f0f;
+}
+.col {
+	background:
+		radial-gradient(ellipse 70% 40% at 50% 100%, rgba(120, 90, 60, 0.05), transparent 70%),
+		#0f0f0f;
+}
+
+/* —— 2. 未解锁节点「岩石轮廓」可见化 —— */
+.treeNode.locked {
+	background: linear-gradient(180deg, #1c1c20, #141416) !important;
+	border: 1px solid #2e2e34 !important;
+	color: #7a7a82 !important;
+	opacity: 1 !important;
+}
+
+/* —— 3. 主操作按钮（撸树/挖掘/寻找）暖铜光晕 ——
+   原为 box-shadow 呼吸动画，但 box-shadow 无限动画是耗电大户（发热主因之一），
+   改为静态光晕：保留视觉焦点、大幅省电。 */
+.upg[id^="clickable-"][style*="width: 120px"] {
+	box-shadow: 0 0 8px 2px rgba(201, 138, 60, 0.35);
+}
+
+/* —— 4. 可购买 vs 不可购买 对比强化 —— */
+.upg.can {
+	border-color: #c98a3c !important;
+	box-shadow: 0 0 6px rgba(201, 138, 60, 0.25);
+}
+.upg.locked {
+	border-color: #2e2e34 !important;
+}
+
+/* —— 5. 分页小控件升级为清晰胶囊 —— */
+.upg[id^="clickable-"][style*="width: 50px"] {
+	background: #1e1e22 !important;
+	border: 1px solid #3a3a40 !important;
+	color: #c4bdb1 !important;
+	font-weight: 700;
+}
+
+/* —— 6. 成就页层次：已解锁暖铜描边突出，未解锁降透明+去色 —— */
+.achievement.locked {
+	opacity: 0.5;
+	filter: grayscale(0.6);
+}
+.achievement.bought {
+	border: 2px solid #e8b25a !important;
+	box-shadow: 0 0 10px rgba(232, 178, 90, 0.35) !important;
+}
+
+/* —— 7. 文字对比度提升 —— */
+.is-mobile {
+	--m-text-2: #c4bdb1;
+	--m-text-3: #a39c90;
+}
+
+/* —— 8. 树连线发光 —— 已移除：canvas 每 500ms 重绘，drop-shadow 滤镜是持续耗电项 */
+
+
+}
