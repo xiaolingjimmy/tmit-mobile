@@ -7,6 +7,7 @@
 - **原游戏**：[The Mining Incremental Table](https://github.com/AngryStar6K/The-Mining-Incremental-Table) — 作者 **AngryStar6K**
 - **游戏引擎**：[The Modding Tree](https://github.com/Acamaeda/The-Modding-Tree) — 作者 **Acamaeda**
 - **引擎改版**：[The-Modding-Table](https://github.com/shenmi124/The-Modding-Table) — 作者 **Shinwmste**
+- **移植作者**：[xiaolingjimmy](https://github.com/xiaolingjimmy)
 
 ## 许可 / License
 
