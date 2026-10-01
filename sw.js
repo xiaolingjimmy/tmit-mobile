@@ -55,7 +55,7 @@ self.addEventListener('fetch', function (event) {
 	}
 
 	// API 请求强制走网络，不缓存（避免存档数据被旧缓存覆盖）
-	if (url.origin === self.location.origin && url.pathname.indexOf('/api/') === 0) {
+	if (url.origin === self.location.origin && url.pathname.indexOf('/api/') !== -1) {
 		event.respondWith(fetch(request));
 		return;
 	}
