@@ -174,7 +174,7 @@
 	var navItems = {};
 	var statExp = null;
 	var statLevel = null;
-	var statOffline = null;
+	var statProgress = null;
 	var lastContentOpen = false;
 	// 折叠状态签名：仅当折叠状态变化时才重绘树连线，避免稳态下无谓重绘
 	var lastCollapseSignature = null;
@@ -199,12 +199,12 @@
 		statExp.className = 'msb-exp';
 		statLevel = document.createElement('span');
 		statLevel.className = 'msb-lv';
-		statOffline = document.createElement('span');
-		statOffline.className = 'msb-off';
+		statProgress = document.createElement('span');
+		statProgress.className = 'msb-progress';
 
 		stats.appendChild(statExp);
 		stats.appendChild(statLevel);
-		stats.appendChild(statOffline);
+		stats.appendChild(statProgress);
 
 		bar.appendChild(stats);
 		return bar;
@@ -865,8 +865,8 @@
 			if (statLevel && typeof window.formatWhole === 'function') {
 				statLevel.textContent = '等级 ' + window.formatWhole(p.level);
 			}
-			if (statOffline && p.offTime && typeof window.formatTime === 'function') {
-				statOffline.textContent = '离线 ' + window.formatTime(p.offTime.remain * 1000);
+			if (statProgress && typeof window.format === 'function' && typeof window.nextLevelReq === 'function') {
+				statProgress.textContent = window.format(p.points) + ' / ' + window.format(window.nextLevelReq());
 			}
 		} catch (err) { /* 忽略格式化异常，避免影响游戏 */ }
 	}
