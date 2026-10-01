@@ -1,0 +1,20 @@
+{
+  "name": "挖矿增量页",
+  "short_name": "挖矿增量",
+  "description": "The Mining Incremental Table 手机端移植版",
+  "lang": "zh-CN",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0f0f0f",
+  "theme_color": "#0f0f0f",
+  "icons": [
+    {
+      "src": "resources/game_icon.png",
+      "sizes": "540x540",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
