@@ -174,6 +174,7 @@
 	var quicknav = null;
 	var treeObserver = null;
 	var navItems = {};
+	var navIndicator = null;
 	var statExp = null;
 	var statLevel = null;
 	var statProgress = null;
@@ -353,6 +354,12 @@
 			nav.appendChild(btn);
 		});
 
+		// 共享指示器（黄线）
+		var indicator = document.createElement('div');
+		indicator.className = 'mnav-indicator';
+		nav.appendChild(indicator);
+		navIndicator = indicator;
+
 		return nav;
 	}
 
@@ -402,6 +409,10 @@
 		else if (SETTINGS_PAGES.indexOf(p.tab) >= 0) active = 'settings';
 		for (var k in navItems) {
 			if (navItems[k]) navItems[k].classList.toggle('active', k === active);
+		}
+		if (navIndicator) {
+			var idx = ['tree', 'achievements', 'timewarp', 'settings'].indexOf(active);
+			navIndicator.style.transform = idx >= 0 ? 'translateX(' + (idx * 100) + '%)' : 'translateX(-100%)';
 		}
 	}
 

@@ -413,6 +413,7 @@
 		font-weight: 600;
 		cursor: pointer;
 		touch-action: manipulation;
+		transition-property: color, transform;
 		transition-duration: var(--m-dur-fast);
 		transition-timing-function: var(--m-ease-out);
 	}
@@ -420,6 +421,11 @@
 	.mnav-icon {
 		font-size: 20px;
 		line-height: 1;
+		transition: transform var(--m-dur-fast) var(--m-ease-out);
+	}
+
+	.mnav-label {
+		transition: color var(--m-dur-fast) var(--m-ease-out);
 	}
 
 	.mnav-item.active {
@@ -430,20 +436,29 @@
 		transform: scale(1.1);
 	}
 
-	.mnav-item.active::before {
-		content: "";
-		position: absolute;
-		top: 0;
-		left: 50%;
-		transform: translateX(-50%);
-		width: 28px;
-		height: 3px;
-		border-radius: 0 0 3px 3px;
-		background: var(--m-vein-hi);
-	}
-
 	.mnav-item:active {
 		transform: scale(0.94);
+	}
+
+	/* 共享指示器 */
+	.mnav-indicator {
+		position: absolute;
+		bottom: 4px;
+		left: 0;
+		width: 25%;
+		height: 3px;
+		pointer-events: none;
+		transition: transform var(--m-dur-fast) var(--m-ease-out);
+	}
+
+	.mnav-indicator::after {
+		content: "";
+		display: block;
+		margin: 0 auto;
+		width: 28px;
+		height: 3px;
+		border-radius: 3px;
+		background: var(--m-vein-hi);
 	}
 
 	/* ---------------- 层级节点 .treeNode ---------------- */
