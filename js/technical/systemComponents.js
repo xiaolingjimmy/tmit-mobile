@@ -262,27 +262,27 @@ var systemComponents = {
         <table class="mset-table"><br><br><br><br><br><br>
             <!-- 组 3 · 存档管理 -->
             <tr>
-                <td class="mset-group-title"><h1>存档管理</h1></td>
-                <td><button class="opt" onclick="save()">本地存档</button></td>
-                <td><button class="opt" onclick="toggleOpt('autosave')">自动存档: {{ options.autosave?(geti18n()?"已开启":"ON"):(geti18n()?"已关闭":"OFF") }}</button></td>
+                <td class="mset-group-title"><h1>{{geti18n()?'存档管理':'Save'}}</h1></td>
+                <td><button class="opt" onclick="save()">{{geti18n()?'本地存档':'Save'}}</button></td>
+                <td><button class="opt" onclick="toggleOpt('autosave')">{{geti18n()?'自动存档':'AutoSave'}}: {{ options.autosave?(geti18n()?"已开启":"ON"):(geti18n()?"已关闭":"OFF") }}</button></td>
             </tr>
             <tr>
-                <td class="mset-subtitle"><h1>导出存档</h1></td>
-                <td><button class="opt" onclick="exportSave()">复制到剪贴板</button></td>
-                <td><button class="opt" onclick="exportSaveToFile()">导出文本文件</button></td>
+                <td class="mset-subtitle"><h1>{{geti18n()?'导出存档':'Export'}}</h1></td>
+                <td><button class="opt" onclick="exportSave()">{{geti18n()?'复制到剪贴板':'Copy to clipboard'}}</button></td>
+                <td><button class="opt" onclick="exportSaveToFile()">{{geti18n()?'导出文本文件':'Export to file'}}</button></td>
             </tr>
             <tr>
-                <td class="mset-subtitle"><h1>导入存档</h1></td>
-                <td><button class="opt" onclick="importSave()">从输入框导入</button></td>
-                <td><button class="opt" onclick="importSaveFromFile()">从文本文件导入</button></td>
+                <td class="mset-subtitle"><h1>{{geti18n()?'导入存档':'Import'}}</h1></td>
+                <td><button class="opt" onclick="importSave()">{{geti18n()?'从输入框导入':'Import from input'}}</button></td>
+                <td><button class="opt" onclick="importSaveFromFile()">{{geti18n()?'从文本文件导入':'Import from file'}}</button></td>
             </tr>
             <tr>
-                <td class="mset-subtitle"><h1>云存档</h1></td>
-                <td><button class="opt" onclick="if(typeof showCloudSaveToast==='function')showCloudSaveToast();else alert('云存档功能即将上线，敬请期待')">登录云存档</button></td>
+                <td class="mset-subtitle"><h1>{{geti18n()?'云存档':'Cloud Save'}}</h1></td>
+                <td><button class="opt" onclick="if(typeof showCloudSaveToast==='function')showCloudSaveToast();else alert(geti18n()?'云存档功能即将上线，敬请期待':'Cloud save is coming soon')">{{geti18n()?'登录云存档':'Sign in'}}</button></td>
             </tr>
             <!-- 性能与优化 -->
             <tr>
-                <td class="mset-group-title"><h1>性能与优化</h1></td>
+                <td class="mset-group-title"><h1>{{geti18n()?'性能与优化':'Performance'}}</h1></td>
                 <td><button class="opt" onclick="if(typeof applyUpdatingRate==='function')applyUpdatingRate(15);else{options.updatingRate=15;try{if(typeof startInterval==='function')startInterval();}catch(e){}}">15ms</button></td>
                 <td><button class="opt" onclick="if(typeof applyUpdatingRate==='function')applyUpdatingRate(25);else{options.updatingRate=25;try{if(typeof startInterval==='function')startInterval();}catch(e){}}">25ms</button></td>
                 <td><button class="opt" onclick="if(typeof applyUpdatingRate==='function')applyUpdatingRate(50);else{options.updatingRate=50;try{if(typeof startInterval==='function')startInterval();}catch(e){}}">50ms</button></td>
@@ -295,29 +295,29 @@ var systemComponents = {
             </tr>
             <!-- 显示设置（原「显示」组，保留全部现有功能） -->
             <tr>
-                <td class="mset-group-title"><h1>显示设置</h1></td>
-                <td><button class="opt" onclick="toggleOpt('hideChallenges')">已完成挑战: {{ options.hideChallenges?(geti18n()?"隐藏":"HIDDI18N"):(geti18n()?"显示":"SHOWN") }}</button></td>
-                <td><button class="opt" onclick="adjustMSDisp()">显示里程碑: {{geti18n()? MS_DISPLAYS[MS_SETTINGS.indexOf(options.msDisplay)] : MS_DISPLAYS_I18N[MS_SETTINGS.indexOf(options.msDisplay)]}}</button></td>
-                <td><button class="opt" onclick="toggleOpt('cursive')">全页面草书字体: {{ options.cursive?(geti18n()?"已开启":"ON"):(geti18n()?"已关闭":"OFF") }}<br><h6>{{geti18n()?"(注: 字体会根据你的浏览器的默认字体而改变, 对于不同浏览器可能会有不同效果, 对于部分浏览器可能无效)":"(Note: The font will change according to your browser's default font. Effects may vary across different browsers, and may not work in some browsers)"}}</h6></button></td>
-                <td><button class="opt" onclick="switchTextShadowShown()">显示文本阴影: {{options.textShadowShown?(geti18n()?"是":"ON"):(geti18n()?"否":"OFF")}}<br><h6>{{geti18n()?"(注: 部分带有动画特效的文本阴影无法关闭)":"(Placeholder)"}}</h6></button></td>
-                <td><button class="opt" onclick="switchDefaultUpgSize();upgSizeSetting()">升级按钮默认大小: {{options.biggerUpgs?"150px":"120px"}}<br><h6>{{geti18n()?"(注: 原版TMT升级大小为120px，为了显示不突兀，提供150px的选项。但部分升级不适用)":"(Placeholder)"}}</h6></button></td>
+                <td class="mset-group-title"><h1>{{geti18n()?'显示设置':'Display'}}</h1></td>
+                <td><button class="opt" onclick="toggleOpt('hideChallenges')">{{geti18n()?'已完成挑战':'Completed Challenges'}}: {{ options.hideChallenges?(geti18n()?"隐藏":"HIDDI18N"):(geti18n()?"显示":"SHOWN") }}</button></td>
+                <td><button class="opt" onclick="adjustMSDisp()">{{geti18n()?'显示里程碑':'Show Milestones'}}: {{geti18n()? MS_DISPLAYS[MS_SETTINGS.indexOf(options.msDisplay)] : MS_DISPLAYS_I18N[MS_SETTINGS.indexOf(options.msDisplay)]}}</button></td>
+                <td><button class="opt" onclick="toggleOpt('cursive')">{{geti18n()?'全页面草书字体':'Cursive Font'}}: {{ options.cursive?(geti18n()?"已开启":"ON"):(geti18n()?"已关闭":"OFF") }}<br><h6>{{geti18n()?"(注: 字体会根据你的浏览器的默认字体而改变, 对于不同浏览器可能会有不同效果, 对于部分浏览器可能无效)":"(Note: The font will change according to your browser's default font. Effects may vary across different browsers, and may not work in some browsers)"}}</h6></button></td>
+                <td><button class="opt" onclick="switchTextShadowShown()">{{geti18n()?'显示文本阴影':'Show Text Shadow'}}: {{options.textShadowShown?(geti18n()?"是":"ON"):(geti18n()?"否":"OFF")}}<br><h6>{{geti18n()?"(注: 部分带有动画特效的文本阴影无法关闭)":"(Placeholder)"}}</h6></button></td>
+                <td><button class="opt" onclick="switchDefaultUpgSize();upgSizeSetting()">{{geti18n()?'升级按钮默认大小':'Default Upgrade Size'}}: {{options.biggerUpgs?"150px":"120px"}}<br><h6>{{geti18n()?"(注: 原版TMT升级大小为120px，为了显示不突兀，提供150px的选项。但部分升级不适用)":"(Placeholder)"}}</h6></button></td>
             </tr>
             <tr>
                 <td><h1>{{''}}</h1></td>
-                <td><button class="opt" onclick="changeNotation()">记数法: {{notationsZH[notations.indexOf(options.notation)]}}</button></td>
-                <td><button class="opt" onclick="switchTheme()">主题: {{ getThemeName() }}<br><h6>(注：部分主题可能会导致一些资源文字难以看清)</br></button></td>
-                <td><button class="opt" onclick="newsSetting()">滚动新闻: {{ options.newsShown ? "显示" : "隐藏" }}<br><h6></br></button></td>
-                <td><button class="opt" onclick="unitLanguageSetting()">单位语言: {{ options.unitLanguage ? "中文" : "英语" }}<br><h6></br></button></td>
-                <td><button class="opt" onclick="switchPopupSize()">小提醒弹窗: {{ options.smallPopup ? "开" : "关" }}<br><h6></br></button></td>
+                <td><button class="opt" onclick="changeNotation()">{{geti18n()?'记数法':'Notation'}}: {{ geti18n()?notationsZH[notations.indexOf(options.notation)]:notations[notations.indexOf(options.notation)] }}</button></td>
+                <td><button class="opt" onclick="switchTheme()">{{geti18n()?'主题':'Theme'}}: {{ getThemeName() }}<br><h6>{{geti18n()?"(注：部分主题可能会导致一些资源文字难以看清)":"(Note: some themes may make resource text hard to read)"}}</br></button></td>
+                <td><button class="opt" onclick="newsSetting()">{{geti18n()?'滚动新闻':'News'}}: {{ options.newsShown ? (geti18n()?"显示":"SHOWN") : (geti18n()?"隐藏":"HIDDEN") }}<br><h6></br></button></td>
+                <td><button class="opt" onclick="unitLanguageSetting()">{{geti18n()?'单位语言':'Unit language'}}: {{ options.unitLanguage ? (geti18n()?"中文":"Chinese") : (geti18n()?"英语":"English") }}<br><h6></br></button></td>
+                <td><button class="opt" onclick="switchPopupSize()">{{geti18n()?'小提醒弹窗':'Small popup'}}: {{ options.smallPopup ? (geti18n()?"开":"ON") : (geti18n()?"关":"OFF") }}<br><h6></br></button></td>
             </tr>
             <tr>
                 <td><h1>{{''}}</h1></td>
-                <td><button class="opt" onclick="setBackgroundImage()">自定义背景图（输入URL）<br><h6></br></button></td>
-                <td><button class="opt" onclick="changeLayerTabShowingOrders()">层级排序方式: {{layerTabShowingOrdersZH[layerTabShowingOrders.indexOf(options.layerTabShowingOrder)]}}</button></td>
+                <td><button class="opt" onclick="setBackgroundImage()">{{geti18n()?'自定义背景图（输入URL）':'Custom background (URL)'}}<br><h6></br></button></td>
+                <td><button class="opt" onclick="changeLayerTabShowingOrders()">{{geti18n()?'层级排序方式':'Layer tab order'}}: {{ geti18n()?layerTabShowingOrdersZH[layerTabShowingOrders.indexOf(options.layerTabShowingOrder)]:layerTabShowingOrders[layerTabShowingOrders.indexOf(options.layerTabShowingOrder)] }}</button></td>
             </tr>
             <!-- 语言 -->
             <tr>
-                <td class="mset-group-title"><h1>语言</h1></td>
+                <td class="mset-group-title"><h1>{{geti18n()?'语言':'Language'}}</h1></td>
                 <td><button class="opt" v-if="modInfo.otherLanguageMod==true" onclick="
                 options.ch=!options.ch;
                 needsCanvasUpdate = true; document.title = (geti18n()? modInfo.name : modInfo.nameI18N);
@@ -327,17 +327,17 @@ var systemComponents = {
             </tr>
             <!-- 组 5 · 危险操作 -->
             <tr class="mset-danger-wrap">
-                <td class="mset-group-title mset-danger-label"><h1>危险操作</h1></td>
+                <td class="mset-group-title mset-danger-label"><h1>{{geti18n()?'危险操作':'Danger zone'}}</h1></td>
                 <td class="mset-danger-cell">
-                    <button class="opt mset-danger-btn" onclick="var c=this.nextElementSibling;c.style.display='block';this.style.display='none';">⚠ 硬重置（删除存档）</button>
+                    <button class="opt mset-danger-btn" onclick="var c=this.nextElementSibling;c.style.display='block';this.style.display='none';">{{geti18n()?'⚠ 硬重置（删除存档）':'⚠ Hard reset (delete save)'}}</button>
                     <div class="mset-confirm-box" style="display:none;">
-                        <p class="mset-confirm-text">确定删除所有存档？此操作不可撤销。</p>
+                        <p class="mset-confirm-text">{{geti18n()?'确定删除所有存档？此操作不可撤销。':'Delete all save data? This cannot be undone.'}}</p>
                         <div class="mset-confirm-actions">
-                            <button class="opt mset-confirm-cancel" onclick="var btn=this.closest('.mset-danger-cell').querySelector('.mset-danger-btn');btn.style.display='block';this.closest('.mset-confirm-box').style.display='none';">取消</button>
-                            <button class="opt mset-confirm-ok" onclick="hardReset()">确认删除</button>
+                            <button class="opt mset-confirm-cancel" onclick="var btn=this.closest('.mset-danger-cell').querySelector('.mset-danger-btn');btn.style.display='block';this.closest('.mset-confirm-box').style.display='none';">{{geti18n()?'取消':'Cancel'}}</button>
+                            <button class="opt mset-confirm-ok" onclick="hardReset()">{{geti18n()?'确认删除':'Confirm'}}</button>
                         </div>
                     </div>
-                    <p class="mset-danger-hint">此操作不可撤销</p>
+                    <p class="mset-danger-hint">{{geti18n()?'此操作不可撤销':'This cannot be undone'}}</p>
                 </td>
             </tr>
         </table>`
