@@ -1968,19 +1968,4 @@
 
 /* —— 8. 树连线发光 —— 已移除：canvas 每 500ms 重绘，drop-shadow 滤镜是持续耗电项 */
 
-/* ---------------- 云存档浮动面板（移动端适配） ---------------- */
-#cloud-fab {
-	top: calc(56px + env(safe-area-inset-top) + 4px) !important;
-	right: 8px !important;
-	width: 40px !important;
-	height: 40px !important;
-}
-#cloud-panel {
-	top: calc(56px + env(safe-area-inset-top) + 52px) !important;
-	right: 8px !important;
-	width: calc(100vw - 32px) !important;
-	max-width: 320px !important;
-	max-height: 60vh !important;
-	-webkit-overflow-scrolling: touch;
-}
 }

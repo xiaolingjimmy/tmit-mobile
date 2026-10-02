@@ -280,6 +280,16 @@ var systemComponents = {
                 <td class="mset-subtitle"><h1>云存档</h1></td>
                 <td><button class="opt" onclick="if(typeof showCloudSaveToast==='function')showCloudSaveToast();else alert('云存档功能即将上线，敬请期待')">登录云存档</button></td>
             </tr>
+            <!-- 性能与优化 -->
+            <tr>
+                <td class="mset-group-title"><h1>性能与优化</h1></td>
+                <td><button class="opt" onclick="if(typeof applyUpdatingRate==='function')applyUpdatingRate(15);else{options.updatingRate=15;try{if(typeof startInterval==='function')startInterval();}catch(e){}}">15ms</button></td>
+                <td><button class="opt" onclick="if(typeof applyUpdatingRate==='function')applyUpdatingRate(25);else{options.updatingRate=25;try{if(typeof startInterval==='function')startInterval();}catch(e){}}">25ms</button></td>
+                <td><button class="opt" onclick="if(typeof applyUpdatingRate==='function')applyUpdatingRate(50);else{options.updatingRate=50;try{if(typeof startInterval==='function')startInterval();}catch(e){}}">50ms</button></td>
+                <td><button class="opt" onclick="if(typeof applyUpdatingRate==='function')applyUpdatingRate(100);else{options.updatingRate=100;try{if(typeof startInterval==='function')startInterval();}catch(e){}}">100ms</button></td>
+                <td><button class="opt" onclick="if(typeof applyUpdatingRate==='function')applyUpdatingRate(200);else{options.updatingRate=200;try{if(typeof startInterval==='function')startInterval();}catch(e){}}">200ms</button></td>
+                <td><button class="opt" onclick="if(typeof applyUpdatingRate==='function')applyUpdatingRate(500);else{options.updatingRate=500;try{if(typeof startInterval==='function')startInterval();}catch(e){}}">500ms</button></td>
+            </tr>
             <!-- 显示设置（原「显示」组，保留全部现有功能） -->
             <tr>
                 <td class="mset-group-title"><h1>显示设置</h1></td>

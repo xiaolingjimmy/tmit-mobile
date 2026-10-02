@@ -1292,6 +1292,7 @@
 	function init() {
 		document.body.classList.add('is-mobile');
 		window.showCloudSaveToast = showCloudSaveToast;
+		window.applyUpdatingRate = applyUpdatingRate;
 
 		statusbar = buildStatusbar();
 		navbar = buildNavbar();
