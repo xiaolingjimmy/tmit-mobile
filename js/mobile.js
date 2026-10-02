@@ -568,6 +568,14 @@
 		updatePerfPanel();
 	}
 
+	// 设置页「性能与优化」拖动条：按档位下标（0..5）映射到 PERF_RATES 后应用
+	function setUpdatingRateByIndex(index) {
+		var i = Number(index);
+		if (!isFinite(i)) return;
+		i = Math.max(0, Math.min(PERF_RATES.length - 1, Math.round(i)));
+		applyUpdatingRate(PERF_RATES[i]);
+	}
+
 	// 刷新读数；只在设置页可见时计算，DOM 仅在文本真正变化时才写
 	function updatePerfPanel() {
 		if (!perfPanel) return;
@@ -596,6 +604,20 @@
 		if (perfHint && perfHint.textContent !== hint) perfHint.textContent = hint;
 
 		updatePerfActive(rate);
+		syncRateSlider(rate);
+	}
+
+	// 拖动条的「已选进度」填充：CSS 用自定义属性 --fill 画到 thumb 左侧
+	function syncRateSlider(rate) {
+		var sliders = document.querySelectorAll('.mset-rate-slider');
+		if (!sliders.length) return;
+		var current = (rate === null || rate === undefined) ? getUpdatingRate() : rate;
+		var idx = PERF_RATES.indexOf(Number(current));
+		if (idx < 0) idx = 0;
+		var pct = (idx / (PERF_RATES.length - 1)) * 100;
+		for (var i = 0; i < sliders.length; i++) {
+			sliders[i].style.setProperty('--fill', pct.toFixed(1) + '%');
+		}
 	}
 
 	// 隐藏游戏自带的 prompt 版「更新频率」按钮（避免两个入口打架）。
@@ -646,64 +668,11 @@
 		head.appendChild(perfMspt);
 		head.appendChild(perfRate);
 
-		var presets = document.createElement('div');
-		presets.className = 'mp-presets';
-		for (var i = 0; i < PERF_RATES.length; i++) {
-			(function (r) {
-				var btn = document.createElement('button');
-				btn.type = 'button';
-				btn.className = 'mp-btn';
-				btn.setAttribute('data-rate', String(r));
-				btn.textContent = String(r);
-				btn.addEventListener('click', function () { applyUpdatingRate(r); });
-				perfButtons.push(btn);
-				presets.appendChild(btn);
-			})(PERF_RATES[i]);
-		}
-
 		perfHint = document.createElement('div');
 		perfHint.className = 'mp-hint';
 
 		panel.appendChild(head);
-		panel.appendChild(presets);
 		panel.appendChild(perfHint);
-
-		// 游戏日志：折叠面板（默认折叠）
-		var logHeader = document.createElement('button');
-		logHeader.type = 'button';
-		logHeader.className = 'mp-log-header';
-		logHeader.textContent = '游戏日志  ▼';
-		var logWrap = document.createElement('div');
-		logWrap.className = 'mp-log-wrap';
-		var logList = document.createElement('div');
-		logList.className = 'mp-log-list';
-		var logActions = document.createElement('div');
-		logActions.className = 'mp-log-actions';
-		var clearBtn = document.createElement('button');
-		clearBtn.type = 'button';
-		clearBtn.textContent = '清空';
-		clearBtn.addEventListener('click', clearLog);
-		var exportBtn = document.createElement('button');
-		exportBtn.type = 'button';
-		exportBtn.textContent = '导出';
-		exportBtn.addEventListener('click', exportLog);
-		var fullBtn = document.createElement('button');
-		fullBtn.type = 'button';
-		fullBtn.textContent = '查看全部';
-		fullBtn.addEventListener('click', showLogModal);
-		logActions.appendChild(clearBtn);
-		logActions.appendChild(exportBtn);
-		logActions.appendChild(fullBtn);
-		logWrap.appendChild(logList);
-		logWrap.appendChild(logActions);
-		logHeader.addEventListener('click', function () {
-			var expanded = logWrap.classList.toggle('expanded');
-			logHeader.textContent = expanded ? '游戏日志  ▲' : '游戏日志  ▼';
-			if (expanded) renderLog();
-		});
-		panel.appendChild(logHeader);
-		panel.appendChild(logWrap);
-		logInlineListEl = logList;
 
 		return panel;
 	}
@@ -1029,7 +998,6 @@
 	var logPanel = null;
 	var logListEl = null;
 	var logLastTab = null;
-	var logInlineListEl = null;
 
 	// 追加一条日志（level: info/warn/error），超上限丢最旧，再触发重渲染
 	function addLog(level, cat, msg) {
@@ -1064,16 +1032,7 @@
 
 	// 面板可见时才重建（最多 200 行，2 秒才可能变一次，开销可接受）
 	function renderLog() {
-		// 内联折叠面板
-		if (logInlineListEl) {
-			var frag1 = document.createDocumentFragment();
-			for (var i = 0; i < GAME_LOG.length; i++) frag1.appendChild(renderLogItem(GAME_LOG[i]));
-			logInlineListEl.textContent = '';
-			logInlineListEl.appendChild(frag1);
-			var wrap1 = logInlineListEl.parentNode;
-			if (wrap1) wrap1.scrollTop = wrap1.scrollHeight;
-		}
-		// 弹窗全屏面板
+		// 弹窗全屏面板（游戏日志入口在设置页「性能与优化」分组内）
 		if (!logListEl || !logPanel || logPanel.hidden) return;
 		var frag2 = document.createDocumentFragment();
 		for (var i = 0; i < GAME_LOG.length; i++) frag2.appendChild(renderLogItem(GAME_LOG[i]));
@@ -1296,6 +1255,8 @@
 		document.body.classList.add('is-mobile');
 		window.showCloudSaveToast = showCloudSaveToast;
 		window.applyUpdatingRate = applyUpdatingRate;
+		window.setUpdatingRateByIndex = setUpdatingRateByIndex;
+		window.showGameLog = showLogModal;
 
 		statusbar = buildStatusbar();
 		navbar = buildNavbar();

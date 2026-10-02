@@ -45,6 +45,15 @@
 	display: none;
 }
 
+/* 设置页「性能与优化」分组的两条移动端专用行：
+   - .mset-rate-row   拖动条（移动端替代 6 个档位按钮）
+   - .mset-log-row    游戏日志同级入口
+   桌面端保持原状（档位按钮 + 无日志入口），窄屏媒体查询内再展开。 */
+.mset-rate-row,
+.mset-log-row {
+	display: none;
+}
+
 /* ==========================================================================
    窄屏（手机竖屏 / 小窗）布局 —— 移动原生重设计
    ========================================================================== */
@@ -126,7 +135,7 @@
 		--m-statusbar-h: calc(56px + env(safe-area-inset-top));
 		--m-navbar-h: calc(60px + env(safe-area-inset-bottom));
 		/* 设置页性能面板高度：.col2 的 padding-top 依此推算（状态栏 56 + 快捷条 56 + 面板 + safe-area） */
-		--m-perf-h: 100px;
+		--m-perf-h: 64px;
 		--m-tap: 44px;
 	}
 
@@ -1104,6 +1113,104 @@
 		flex: 1;
 	}
 
+	/* ---------------- 更新频率拖动条 .mset-rate-*（移动端） ----------------
+	   在设置页「性能与优化」分组内替代原来的 6 个档位按钮：窄屏隐藏
+	   .mset-rate-btn-cell、展开 .mset-rate-row。拖动到某档调用
+	   window.setUpdatingRateByIndex → applyUpdatingRate（改 options.updatingRate
+	   并重启主循环），与原生 setUpdatingRate() 的生效方式一致，不涉及数值逻辑。 */
+	table:has(.opt) td.mset-rate-btn-cell {
+		display: none !important; /* 覆盖同文件 table:has(.opt) td 的 display:block !important */
+	}
+
+	table:has(.opt) td.mset-rate-cell {
+		display: block !important;
+		flex: 0 0 96%;
+		margin: 5px 2%;
+	}
+
+	.mset-rate-value {
+		margin: 4px 0 2px 0;
+		font-size: var(--m-fs-2);
+		color: var(--m-text-3);
+		text-align: center;
+	}
+
+	.mset-rate-value b {
+		color: var(--m-vein);
+		font-variant-numeric: tabular-nums;
+	}
+
+	/* 原生 range 外观重置；高度取 ≥44px 触控目标 */
+	.mset-rate-slider {
+		display: block;
+		width: 100%;
+		height: var(--m-tap);
+		margin: 0;
+		padding: 0;
+		background: transparent;
+		-webkit-appearance: none;
+		appearance: none;
+	}
+
+	.mset-rate-slider:focus {
+		outline: none;
+	}
+
+	.mset-rate-slider::-webkit-slider-runnable-track {
+		height: 10px;
+		margin: 0;
+		border: 1px solid var(--m-line);
+		border-radius: var(--m-r-pill);
+		/* 已选进度填充：--fill 由 mobile.js 的 syncRateSlider() 写入 */
+		background: linear-gradient(to right,
+			var(--m-vein) 0 var(--fill, 0%),
+			var(--m-rock-700) var(--fill, 0%));
+	}
+
+	.mset-rate-slider::-webkit-slider-thumb {
+		-webkit-appearance: none;
+		width: 28px;
+		height: 28px;
+		margin-top: -10px;
+		border: 2px solid var(--m-vein-hi);
+		border-radius: 50%;
+		background: var(--m-vein);
+		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.55);
+	}
+
+	.mset-rate-slider::-moz-range-track {
+		height: 10px;
+		border: 1px solid var(--m-line);
+		border-radius: var(--m-r-pill);
+		background: var(--m-rock-700);
+	}
+
+	/* Firefox 自带进度段，无需 --fill */
+	.mset-rate-slider::-moz-range-progress {
+		height: 10px;
+		border-radius: var(--m-r-pill);
+		background: var(--m-vein);
+	}
+
+	.mset-rate-slider::-moz-range-thumb {
+		width: 26px;
+		height: 26px;
+		border: 2px solid var(--m-vein-hi);
+		border-radius: 50%;
+		background: var(--m-vein);
+	}
+
+	/* 刻度行：6 档等分，两端留出滑块半径的内边距 */
+	.mset-rate-ticks {
+		display: flex;
+		justify-content: space-between;
+		margin: 2px 0 0 0;
+		padding: 0 10px;
+		font-size: var(--m-fs-1);
+		color: var(--m-text-3);
+		font-variant-numeric: tabular-nums;
+	}
+
 	/* ---------------- 提示框 .tooltip ---------------- */
 	.tooltip {
 		max-width: 80vw !important;
@@ -1409,11 +1516,12 @@
 	   DOM 契约（由 js/mobile.js 注入到 <body>，与 #mobile-quicknav 同级）：
 	     <div id="mobile-perf" class="mobile-perf">
 	       <div class="mp-head"><span class="mp-title"></span><span class="mp-mspt"></span><span class="mp-rate"></span></div>
-	       <div class="mp-presets"><button type="button" class="mp-btn" data-rate="50"></button>…</div>
 	       <div class="mp-hint"></div>
 	     </div>
 	   状态类：body.mobile-tab-options（与快捷条同一开关，不新增 body class）、
-	           .mobile-perf.mp-warn（MSPT > 更新频率）、.mp-btn.active（当前生效档）。
+	           .mobile-perf.mp-warn（MSPT > 更新频率）。
+	   注：档位选择已改为设置页「性能与优化」分组内的拖动条（.mset-rate-*），
+	   游戏日志入口已改为该分组内的同级按钮，本面板不再承载这两者。
 	   位置：top = 状态栏 56 + 快捷条 56 + safe-area；高度固定 var(--m-perf-h)，
 	   故 .col2 的 padding-top 可精确等于面板底边，内容永不被遮。
 	   注：游戏全局 `* { margin: auto }` 会把每个元素外边距设为 auto，
@@ -1475,131 +1583,6 @@
 		color: var(--m-text-3);
 	}
 
-	/* 预设行：等分 flex，加到 5~6 档也不溢出（与页签同一思路） */
-	.mp-presets {
-		display: flex;
-		gap: 6px;
-		margin: 0;
-		min-width: 0;
-	}
-
-	.mp-btn {
-		flex: 1 1 0;
-		min-width: 0;
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		min-height: var(--m-tap); /* ≥44px 触控目标 */
-		padding: 0 4px;
-		margin: 0;
-		border: 1px solid var(--m-line);
-		border-radius: var(--m-r-pill);
-		background: var(--m-rock-600);
-		color: var(--m-text-2);
-		font-size: var(--m-fs-2);
-		font-weight: 600;
-		font-variant-numeric: tabular-nums;
-		line-height: 1;
-		white-space: nowrap;
-		overflow: hidden;
-		text-overflow: ellipsis;
-		cursor: pointer;
-		touch-action: manipulation;
-		box-sizing: border-box;
-		transition-duration: var(--m-dur-fast);
-		transition-timing-function: var(--m-ease-out);
-	}
-
-	.mp-btn:active {
-		transform: scale(0.96);
-	}
-
-	/* 当前生效档：暖铜面 + 深字（与已批准的强调色一致） */
-	.mp-btn.active {
-		background: var(--m-vein);
-		border-color: var(--m-vein-hi);
-		color: var(--m-ink);
-		font-weight: 700;
-	}
-
-	/* 游戏日志折叠面板（位于性能面板底部） */
-	.mp-log-header {
-		flex: 0 0 auto;
-		align-self: stretch;
-		margin: 6px 0 0 0;
-		padding: 6px 10px;
-		min-height: var(--m-tap);
-		border: 1px solid var(--m-line);
-		border-radius: var(--m-r-1);
-		background: var(--m-rock-600);
-		color: var(--m-text-2);
-		font-size: var(--m-fs-2);
-		font-weight: 600;
-		cursor: pointer;
-		touch-action: manipulation;
-		box-sizing: border-box;
-		transition-duration: var(--m-dur-fast);
-		transition-timing-function: var(--m-ease-out);
-		text-align: left;
-	}
-
-	.mp-log-header:active {
-		transform: scale(0.98);
-		background: var(--m-rock-500);
-		color: var(--m-text-1);
-	}
-
-	.mp-log-wrap {
-		display: none;
-		flex-direction: column;
-		gap: 6px;
-		margin: 6px 0 0 0;
-		padding: 8px;
-		background: var(--m-rock-800);
-		border: 1px solid var(--m-line-soft);
-		border-radius: var(--m-r-1);
-		max-height: 260px;
-	}
-
-	.mp-log-wrap.expanded {
-		display: flex;
-	}
-
-	.mp-log-list {
-		overflow-y: auto;
-		font-size: var(--m-fs-1);
-		line-height: 1.4;
-		color: var(--m-text-2);
-		flex: 1 1 auto;
-		min-height: 0;
-	}
-
-	.mp-log-list .ml-item {
-		padding: 2px 0;
-		border-bottom: 1px solid var(--m-line-soft);
-	}
-
-	.mp-log-list .ml-item:last-child {
-		border-bottom: none;
-	}
-
-	.mp-log-actions {
-		display: flex;
-		gap: 6px;
-		flex-wrap: wrap;
-	}
-
-	.mp-log-actions button {
-		flex: 1 1 auto;
-		min-height: 32px;
-		padding: 4px 10px;
-		border: 1px solid var(--m-line);
-		border-radius: var(--m-r-1);
-		background: var(--m-rock-600);
-		color: var(--m-text-1);
-		font-size: var(--m-fs-1);
-		cursor: pointer;
-	}
 
 	/* 提示行：平时为空不占位，有内容时才显示（单行省略） */
 	.mp-hint {

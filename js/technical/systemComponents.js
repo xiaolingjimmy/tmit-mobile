@@ -283,15 +283,29 @@ var systemComponents = {
             <!-- 性能与优化 -->
             <tr>
                 <td class="mset-group-title"><h1>{{geti18n()?'性能与优化':'Performance'}}</h1></td>
-                <td><button class="opt" onclick="if(typeof applyUpdatingRate==='function')applyUpdatingRate(15);else{options.updatingRate=15;try{if(typeof startInterval==='function')startInterval();}catch(e){}}">15ms</button></td>
-                <td><button class="opt" onclick="if(typeof applyUpdatingRate==='function')applyUpdatingRate(25);else{options.updatingRate=25;try{if(typeof startInterval==='function')startInterval();}catch(e){}}">25ms</button></td>
-                <td><button class="opt" onclick="if(typeof applyUpdatingRate==='function')applyUpdatingRate(50);else{options.updatingRate=50;try{if(typeof startInterval==='function')startInterval();}catch(e){}}">50ms</button></td>
+                <td class="mset-rate-btn-cell"><button class="opt" onclick="if(typeof applyUpdatingRate==='function')applyUpdatingRate(15);else{options.updatingRate=15;try{if(typeof startInterval==='function')startInterval();}catch(e){}}">15ms</button></td>
+                <td class="mset-rate-btn-cell"><button class="opt" onclick="if(typeof applyUpdatingRate==='function')applyUpdatingRate(25);else{options.updatingRate=25;try{if(typeof startInterval==='function')startInterval();}catch(e){}}">25ms</button></td>
+                <td class="mset-rate-btn-cell"><button class="opt" onclick="if(typeof applyUpdatingRate==='function')applyUpdatingRate(50);else{options.updatingRate=50;try{if(typeof startInterval==='function')startInterval();}catch(e){}}">50ms</button></td>
             </tr>
             <tr>
                 <td><h1>{{''}}</h1></td>
-                <td><button class="opt" onclick="if(typeof applyUpdatingRate==='function')applyUpdatingRate(100);else{options.updatingRate=100;try{if(typeof startInterval==='function')startInterval();}catch(e){}}">100ms</button></td>
-                <td><button class="opt" onclick="if(typeof applyUpdatingRate==='function')applyUpdatingRate(200);else{options.updatingRate=200;try{if(typeof startInterval==='function')startInterval();}catch(e){}}">200ms</button></td>
-                <td><button class="opt" onclick="if(typeof applyUpdatingRate==='function')applyUpdatingRate(500);else{options.updatingRate=500;try{if(typeof startInterval==='function')startInterval();}catch(e){}}">500ms</button></td>
+                <td class="mset-rate-btn-cell"><button class="opt" onclick="if(typeof applyUpdatingRate==='function')applyUpdatingRate(100);else{options.updatingRate=100;try{if(typeof startInterval==='function')startInterval();}catch(e){}}">100ms</button></td>
+                <td class="mset-rate-btn-cell"><button class="opt" onclick="if(typeof applyUpdatingRate==='function')applyUpdatingRate(200);else{options.updatingRate=200;try{if(typeof startInterval==='function')startInterval();}catch(e){}}">200ms</button></td>
+                <td class="mset-rate-btn-cell"><button class="opt" onclick="if(typeof applyUpdatingRate==='function')applyUpdatingRate(500);else{options.updatingRate=500;try{if(typeof startInterval==='function')startInterval();}catch(e){}}">500ms</button></td>
+            </tr>
+            <!-- 移动端：更新频率改为拖动条（窄屏展开，桌面端隐藏 → 桌面继续用上面的档位按钮） -->
+            <tr class="mset-rate-row">
+                <td class="mset-rate-cell">
+                    <div class="mset-rate-value">{{geti18n()?'更新频率':'Update rate'}}: <b>{{ options.updatingRate }}ms</b></div>
+                    <input class="mset-rate-slider" type="range" min="0" max="5" step="1"
+                        :value="Math.max(0,[15,25,50,100,200,500].indexOf(options.updatingRate))"
+                        oninput="if(window.setUpdatingRateByIndex)window.setUpdatingRateByIndex(this.value)">
+                    <div class="mset-rate-ticks"><span>15</span><span>25</span><span>50</span><span>100</span><span>200</span><span>500</span></div>
+                </td>
+            </tr>
+            <!-- 移动端：游戏日志同级入口（窄屏展开，桌面端隐藏） -->
+            <tr class="mset-log-row">
+                <td class="mset-log-cell"><button class="opt" onclick="if(typeof showGameLog==='function')showGameLog()">{{geti18n()?'游戏日志':'Game log'}}</button></td>
             </tr>
             <!-- 显示设置（原「显示」组，保留全部现有功能） -->
             <tr>
