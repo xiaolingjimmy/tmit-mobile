@@ -174,6 +174,7 @@
 	var quicknav = null;
 	var treeObserver = null;
 	var navItems = {};
+	var navIndicator = null;
 	var statExp = null;
 	var statLevel = null;
 	var statProgress = null;
@@ -353,6 +354,12 @@
 			nav.appendChild(btn);
 		});
 
+		// 共享指示器（黄线）
+		var indicator = document.createElement('div');
+		indicator.className = 'mnav-indicator';
+		nav.appendChild(indicator);
+		navIndicator = indicator;
+
 		return nav;
 	}
 
@@ -403,6 +410,10 @@
 		for (var k in navItems) {
 			if (navItems[k]) navItems[k].classList.toggle('active', k === active);
 		}
+		if (navIndicator) {
+			var idx = ['tree', 'achievements', 'timewarp', 'settings'].indexOf(active);
+			navIndicator.style.transform = idx >= 0 ? 'translateX(' + (idx * 100) + '%)' : 'translateX(-100%)';
+		}
 	}
 
 	// ---------- UI#2：隐藏层级页重复的「经验/等级」 ----------
@@ -441,8 +452,9 @@
 		document.body.classList.toggle('mobile-tab-options', onOptions);
 		// 性能面板与快捷入口共用同一开关（兜底：样式未就绪时也不会在非设置页误显）
 		if (perfPanel) perfPanel.hidden = !onOptions;
-		// 日志面板与快捷入口共用同一开关；打开时立即渲染最新日志
-		if (logPanel) { logPanel.hidden = !onOptions; if (onOptions) renderLog(); }
+		// 日志面板不再随设置页自动弹出（改为在性能面板内手动打开），
+		// 但保留弹窗打开状态下的自动刷新
+		if (logPanel && !logPanel.hidden) renderLog();
 		// 页面切换检测
 		trackTabChange();
 		updateNavActive();
@@ -620,7 +632,7 @@
 
 		var title = document.createElement('span');
 		title.className = 'mp-title';
-		title.textContent = '性能';
+		title.textContent = '性能与优化';
 
 		perfMspt = document.createElement('span');
 		perfMspt.className = 'mp-mspt';
@@ -655,6 +667,43 @@
 		panel.appendChild(head);
 		panel.appendChild(presets);
 		panel.appendChild(perfHint);
+
+		// 游戏日志：折叠面板（默认折叠）
+		var logHeader = document.createElement('button');
+		logHeader.type = 'button';
+		logHeader.className = 'mp-log-header';
+		logHeader.textContent = '游戏日志  ▼';
+		var logWrap = document.createElement('div');
+		logWrap.className = 'mp-log-wrap';
+		var logList = document.createElement('div');
+		logList.className = 'mp-log-list';
+		var logActions = document.createElement('div');
+		logActions.className = 'mp-log-actions';
+		var clearBtn = document.createElement('button');
+		clearBtn.type = 'button';
+		clearBtn.textContent = '清空';
+		clearBtn.addEventListener('click', clearLog);
+		var exportBtn = document.createElement('button');
+		exportBtn.type = 'button';
+		exportBtn.textContent = '导出';
+		exportBtn.addEventListener('click', exportLog);
+		var fullBtn = document.createElement('button');
+		fullBtn.type = 'button';
+		fullBtn.textContent = '查看全部';
+		fullBtn.addEventListener('click', showLogModal);
+		logActions.appendChild(clearBtn);
+		logActions.appendChild(exportBtn);
+		logActions.appendChild(fullBtn);
+		logWrap.appendChild(logList);
+		logWrap.appendChild(logActions);
+		logHeader.addEventListener('click', function () {
+			var expanded = logWrap.classList.toggle('expanded');
+			logHeader.textContent = expanded ? '游戏日志  ▲' : '游戏日志  ▼';
+			if (expanded) renderLog();
+		});
+		panel.appendChild(logHeader);
+		panel.appendChild(logWrap);
+		logInlineListEl = logList;
 
 		return panel;
 	}
@@ -980,6 +1029,7 @@
 	var logPanel = null;
 	var logListEl = null;
 	var logLastTab = null;
+	var logInlineListEl = null;
 
 	// 追加一条日志（level: info/warn/error），超上限丢最旧，再触发重渲染
 	function addLog(level, cat, msg) {
@@ -994,32 +1044,43 @@
 		return p(d.getHours()) + ':' + p(d.getMinutes()) + ':' + p(d.getSeconds());
 	}
 
+	function renderLogItem(item) {
+		var div = document.createElement('div');
+		div.className = 'ml-item ml-' + item.level;
+		var time = document.createElement('span');
+		time.className = 'ml-time';
+		time.textContent = fmtLogTime(item.t);
+		var lvl = document.createElement('span');
+		lvl.className = 'ml-level';
+		lvl.textContent = item.level.toUpperCase();
+		var body = document.createElement('span');
+		body.className = 'ml-msg';
+		body.textContent = (item.cat ? '[' + item.cat + '] ' : '') + item.msg;
+		div.appendChild(time);
+		div.appendChild(lvl);
+		div.appendChild(body);
+		return div;
+	}
+
 	// 面板可见时才重建（最多 200 行，2 秒才可能变一次，开销可接受）
 	function renderLog() {
-		if (!logListEl || !logPanel || logPanel.hidden) return;
-		var frag = document.createDocumentFragment();
-		for (var i = 0; i < GAME_LOG.length; i++) {
-			var item = GAME_LOG[i];
-			var div = document.createElement('div');
-			div.className = 'ml-item ml-' + item.level;
-			var time = document.createElement('span');
-			time.className = 'ml-time';
-			time.textContent = fmtLogTime(item.t);
-			var lvl = document.createElement('span');
-			lvl.className = 'ml-level';
-			lvl.textContent = item.level.toUpperCase();
-			var body = document.createElement('span');
-			body.className = 'ml-msg';
-			body.textContent = (item.cat ? '[' + item.cat + '] ' : '') + item.msg;
-			div.appendChild(time);
-			div.appendChild(lvl);
-			div.appendChild(body);
-			frag.appendChild(div);
+		// 内联折叠面板
+		if (logInlineListEl) {
+			var frag1 = document.createDocumentFragment();
+			for (var i = 0; i < GAME_LOG.length; i++) frag1.appendChild(renderLogItem(GAME_LOG[i]));
+			logInlineListEl.textContent = '';
+			logInlineListEl.appendChild(frag1);
+			var wrap1 = logInlineListEl.parentNode;
+			if (wrap1) wrap1.scrollTop = wrap1.scrollHeight;
 		}
+		// 弹窗全屏面板
+		if (!logListEl || !logPanel || logPanel.hidden) return;
+		var frag2 = document.createDocumentFragment();
+		for (var i = 0; i < GAME_LOG.length; i++) frag2.appendChild(renderLogItem(GAME_LOG[i]));
 		logListEl.textContent = '';
-		logListEl.appendChild(frag);
-		var wrap = logListEl.parentNode;
-		if (wrap) wrap.scrollTop = wrap.scrollHeight;
+		logListEl.appendChild(frag2);
+		var wrap2 = logListEl.parentNode;
+		if (wrap2) wrap2.scrollTop = wrap2.scrollHeight;
 	}
 
 	function clearLog() {
@@ -1028,52 +1089,111 @@
 	}
 
 	function buildLogPanel() {
+		// 遮罩层（点击背景可关闭）
+		var overlay = document.createElement('div');
+		overlay.id = 'mobile-log-overlay';
+		overlay.className = 'mobile-log-overlay';
+		overlay.hidden = true;
+		overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:20050;align-items:center;justify-content:center;padding:16px;display:none;';
+		overlay.addEventListener('click', function (e) {
+			if (e.target === overlay) hideLogModal();
+		});
+
+		// 弹窗主体
 		var panel = document.createElement('div');
 		panel.id = 'mobile-log';
 		panel.className = 'mobile-log';
-		panel.hidden = true;
-		// 基础布局内联（可见即可用）；视觉精修交给 engineer-2 的 CSS
-		panel.style.position = 'fixed';
-		panel.style.left = '8px';
-		panel.style.right = '8px';
-		panel.style.bottom = 'calc(var(--m-navbar-h, 60px) + 64px)';
-		panel.style.maxHeight = '30vh';
-		panel.style.zIndex = '20040';
-		panel.style.display = 'flex';
-		panel.style.flexDirection = 'column';
-		panel.style.background = 'rgba(20,18,15,0.97)';
-		panel.style.border = '1px solid #423b33';
-		panel.style.borderRadius = '10px';
-		panel.style.overflow = 'hidden';
-		panel.style.fontSize = '12px';
+		panel.style.cssText = 'width:100%;max-width:520px;max-height:70vh;display:flex;flex-direction:column;background:rgba(20,18,15,0.97);border:1px solid #423b33;border-radius:12px;overflow:hidden;font-size:12px;box-shadow:0 12px 40px rgba(0,0,0,0.5);';
 
 		var head = document.createElement('div');
 		head.className = 'ml-head';
-		head.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:6px 8px;border-bottom:1px solid #423b33;';
+		head.style.cssText = 'display:flex;align-items:center;gap:8px;padding:8px 10px;border-bottom:1px solid #423b33;flex-wrap:wrap;';
+
 		var title = document.createElement('span');
 		title.className = 'ml-title';
 		title.textContent = '游戏日志';
-		title.style.fontWeight = '600';
+		title.style.cssText = 'font-weight:600;flex:1 1 auto;';
+
+		var exportBtn = document.createElement('button');
+		exportBtn.type = 'button';
+		exportBtn.className = 'ml-export';
+		exportBtn.textContent = '导出';
+		exportBtn.style.cssText = 'border:1px solid #423b33;background:#26221e;color:#e8e6e3;border-radius:6px;padding:2px 10px;min-height:28px;font-size:12px;';
+		exportBtn.addEventListener('click', exportLog);
+
 		var clearBtn = document.createElement('button');
 		clearBtn.type = 'button';
 		clearBtn.className = 'ml-clear';
 		clearBtn.textContent = '清空';
-		clearBtn.style.cssText = 'border:1px solid #423b33;background:#26221e;color:#e8e6e3;border-radius:6px;padding:2px 10px;min-height:28px;';
+		clearBtn.style.cssText = 'border:1px solid #423b33;background:#26221e;color:#e8e6e3;border-radius:6px;padding:2px 10px;min-height:28px;font-size:12px;';
 		clearBtn.addEventListener('click', clearLog);
+
+		var closeBtn = document.createElement('button');
+		closeBtn.type = 'button';
+		closeBtn.className = 'ml-close';
+		closeBtn.textContent = '关闭';
+		closeBtn.style.cssText = 'border:1px solid #423b33;background:#26221e;color:#e8e6e3;border-radius:6px;padding:2px 10px;min-height:28px;font-size:12px;';
+		closeBtn.addEventListener('click', hideLogModal);
+
 		head.appendChild(title);
+		head.appendChild(exportBtn);
 		head.appendChild(clearBtn);
+		head.appendChild(closeBtn);
 
 		var wrap = document.createElement('div');
 		wrap.className = 'ml-list-wrap';
 		wrap.style.cssText = 'overflow-y:auto;-webkit-overflow-scrolling:touch;flex:1 1 auto;min-height:0;';
 		logListEl = document.createElement('div');
 		logListEl.className = 'ml-list';
-		logListEl.style.padding = '4px 6px';
+		logListEl.style.padding = '6px 8px';
 		wrap.appendChild(logListEl);
 
 		panel.appendChild(head);
 		panel.appendChild(wrap);
-		return panel;
+		overlay.appendChild(panel);
+		return overlay;
+	}
+
+	function showLogModal() {
+		if (!logPanel) return;
+		logPanel.hidden = false;
+		logPanel.style.display = 'flex';
+		renderLog();
+	}
+
+	function hideLogModal() {
+		if (!logPanel) return;
+		logPanel.hidden = true;
+		logPanel.style.display = 'none';
+	}
+
+	function exportLog() {
+		if (!GAME_LOG.length) {
+			alert('日志为空，无内容可导出。');
+			return;
+		}
+		var lines = [];
+		for (var i = 0; i < GAME_LOG.length; i++) {
+			var item = GAME_LOG[i];
+			lines.push(fmtLogTime(item.t) + ' [' + item.level.toUpperCase() + '] ' + (item.cat ? '[' + item.cat + '] ' : '') + item.msg);
+		}
+		var blob = new Blob([lines.join('\n')], { type: 'text/plain;charset=utf-8' });
+		var url = URL.createObjectURL(blob);
+		var a = document.createElement('a');
+		var now = new Date();
+		function p(n) { return (n < 10 ? '0' : '') + n; }
+		// 文件名带时区标识，避免跨时区协作时无法判断日志归属时区
+		var tzOff = -now.getTimezoneOffset(); // 分钟，东八区 = 480
+		var tz = 'UTC' + (tzOff < 0 ? '-' : '+') + p(Math.floor(Math.abs(tzOff) / 60)) + p(Math.abs(tzOff) % 60);
+		a.download = 'game-log-' + now.getFullYear() + p(now.getMonth() + 1) + p(now.getDate()) + '-' + p(now.getHours()) + p(now.getMinutes()) + p(now.getSeconds()) + '-' + tz + '.txt';
+		a.href = url;
+		a.style.display = 'none';
+		document.body.appendChild(a);
+		a.click();
+		setTimeout(function () {
+			document.body.removeChild(a);
+			URL.revokeObjectURL(url);
+		}, 2000);
 	}
 
 	// 每 2 秒采样一次性能（MSPT / 近似 FPS / 频率 / DOM 数）
@@ -1168,8 +1288,14 @@
 		window.importSave = wrapped;
 	}
 
+	function showCloudSaveToast() {
+		alert('云存档功能即将上线，敬请期待');
+	}
+
 	function init() {
 		document.body.classList.add('is-mobile');
+		window.showCloudSaveToast = showCloudSaveToast;
+		window.applyUpdatingRate = applyUpdatingRate;
 
 		statusbar = buildStatusbar();
 		navbar = buildNavbar();

@@ -46,7 +46,6 @@ self.addEventListener('activate', function (event) {
 
 self.addEventListener('fetch', function (event) {
 	var request = event.request;
-	if (request.method !== 'GET') return;
 
 	var url;
 	try {
@@ -54,6 +53,15 @@ self.addEventListener('fetch', function (event) {
 	} catch (e) {
 		return;
 	}
+
+	// API 请求强制走网络，不缓存（避免存档数据被旧缓存覆盖）
+	if (url.origin === self.location.origin && url.pathname.indexOf('/api/') !== -1) {
+		event.respondWith(fetch(request));
+		return;
+	}
+
+	if (request.method !== 'GET') return;
+
 	// 只处理同源资源；跨域（Google Fonts 等）交还浏览器，失败自然降级
 	if (url.origin !== self.location.origin) return;
 
