@@ -1182,7 +1182,10 @@
 		var a = document.createElement('a');
 		var now = new Date();
 		function p(n) { return (n < 10 ? '0' : '') + n; }
-		a.download = 'game-log-' + now.getFullYear() + p(now.getMonth() + 1) + p(now.getDate()) + '-' + p(now.getHours()) + p(now.getMinutes()) + p(now.getSeconds()) + '.txt';
+		// 文件名带时区标识，避免跨时区协作时无法判断日志归属时区
+		var tzOff = -now.getTimezoneOffset(); // 分钟，东八区 = 480
+		var tz = 'UTC' + (tzOff < 0 ? '-' : '+') + p(Math.floor(Math.abs(tzOff) / 60)) + p(Math.abs(tzOff) % 60);
+		a.download = 'game-log-' + now.getFullYear() + p(now.getMonth() + 1) + p(now.getDate()) + '-' + p(now.getHours()) + p(now.getMinutes()) + p(now.getSeconds()) + '-' + tz + '.txt';
 		a.href = url;
 		a.style.display = 'none';
 		document.body.appendChild(a);
