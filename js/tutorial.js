@@ -51,13 +51,12 @@
 		try { return !!(window.tmp && tmp.crafting_table && tmp.crafting_table.layerShown); } catch (e) { return false; }
 	}
 	function layerTotal() {
-		// 层级总数 = 所有 layer 去掉「其他页面 / 杂项 / 世界分隔」这类非游戏层级
-		var exclude = ['info-tab', 'options-tab', 'changelog-tab', 'OtherTab small', 'Setting',
-			'Information', 'Changelog', 'blank', 'tree-tab', 'general', '0layer', '1layer', '2layer',
-			'w2', 'w3', 'w4', 'w5', 'w6', 'statistics', 'stories', 'layer_select', 'achievements',
-			'offline_progress', 'map'];
+		// 层级总数 = 树状图上出现的全部层级节点（含资源层级与合成台 / 熔炉 / 合金炉等生产层级，
+		// 以及统计 / 故事等页面节点），只排除 info-tab、options-tab 这类非树节点。
 		try {
-			return Object.keys(layers).filter(function (k) { return exclude.indexOf(k) < 0; }).length;
+			return Object.keys(layers).filter(function (k) {
+				return layers[k] && typeof layers[k].row === 'number';
+			}).length;
 		} catch (e) { return 0; }
 	}
 
