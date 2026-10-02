@@ -1,0 +1,174 @@
+/* ==========================================================================
+   新手教程样式（注入式，双平台生效）
+   --------------------------------------------------------------------------
+   结构（由 js/tutorial.js 注入到 <body>）：
+     <div id="tut-root">
+       <div class="tut-block"> ×4   四块遮罩，围出目标矩形（目标本身不被盖住，仍可点击）
+       <div class="tut-ring">       目标高亮描边
+       <div class="tut-card">       文案卡 + 跳过 / 下一步按钮
+       <div class="tut-bar">        阶段 B 目标进度条
+     </div>
+   说明：游戏全局有 `* { margin: auto }` 等重置，故本文件所有元素显式声明
+   margin / padding / box-sizing，避免被游戏样式影响。
+   ========================================================================== */
+
+#tut-root {
+	position: fixed;
+	inset: 0;
+	z-index: 99990;
+	pointer-events: none;
+	font-family: system-ui, -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+	-webkit-user-select: none;
+	user-select: none;
+}
+
+#tut-root[hidden] {
+	display: none !important;
+}
+
+/* 遮罩：拦截除目标以外的一切点击 */
+.tut-block {
+	position: fixed;
+	margin: 0;
+	padding: 0;
+	background: rgba(0, 0, 0, 0.62);
+	pointer-events: auto;
+	z-index: 99990;
+}
+
+/* 目标描边（不拦点击） */
+.tut-ring {
+	position: fixed;
+	margin: 0;
+	padding: 0;
+	border: 2px solid #d7a54b;
+	border-radius: 10px;
+	box-shadow: 0 0 0 3px rgba(215, 165, 75, 0.25), 0 0 18px rgba(215, 165, 75, 0.45);
+	pointer-events: none;
+	z-index: 99992;
+	animation: tut-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes tut-pulse {
+	0%, 100% { box-shadow: 0 0 0 3px rgba(215, 165, 75, 0.22), 0 0 14px rgba(215, 165, 75, 0.35); }
+	50% { box-shadow: 0 0 0 6px rgba(215, 165, 75, 0.30), 0 0 22px rgba(215, 165, 75, 0.55); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.tut-ring { animation: none; }
+}
+
+/* 文案卡 */
+.tut-card {
+	position: fixed;
+	left: 50%;
+	transform: translateX(-50%);
+	bottom: 16px;
+	width: min(440px, 92vw);
+	margin: 0;
+	padding: 14px 16px 12px 16px;
+	box-sizing: border-box;
+	background: #16191e;
+	border: 1px solid #3a424d;
+	border-radius: 14px;
+	box-shadow: 0 8px 28px rgba(0, 0, 0, 0.6);
+	color: #e6ebf0;
+	pointer-events: auto;
+	z-index: 99995;
+}
+
+.tut-title {
+	margin: 0 0 6px 0;
+	font-size: 15px;
+	font-weight: 700;
+	color: #ffffff;
+	letter-spacing: 0.02em;
+}
+
+.tut-text {
+	margin: 0 0 12px 0;
+	font-size: 14px;
+	line-height: 1.5;
+	color: #cdd7e0;
+	white-space: pre-line;
+}
+
+.tut-actions {
+	display: flex;
+	gap: 8px;
+	justify-content: flex-end;
+	margin: 0;
+}
+
+.tut-btn {
+	flex: 0 0 auto;
+	min-height: 40px;
+	min-width: 84px;
+	margin: 0;
+	padding: 8px 16px;
+	border: 1px solid #3a424d;
+	border-radius: 10px;
+	background: #242b34;
+	color: #dfe5ea;
+	font-size: 14px;
+	font-family: inherit;
+	cursor: pointer;
+	touch-action: manipulation;
+	box-sizing: border-box;
+}
+
+.tut-btn-main {
+	background: #d7a54b;
+	border-color: #e0b463;
+	color: #1b1b1b;
+	font-weight: 700;
+}
+
+.tut-btn:active {
+	transform: scale(0.97);
+}
+
+/* 阶段 B 目标条 */
+.tut-bar {
+	position: fixed;
+	left: 50%;
+	transform: translateX(-50%);
+	bottom: 16px;
+	display: flex;
+	align-items: center;
+	margin: 0;
+	padding: 8px 14px;
+	max-width: 92vw;
+	box-sizing: border-box;
+	background: rgba(22, 25, 30, 0.96);
+	border: 1px solid #d7a54b;
+	border-radius: 999px;
+	box-shadow: 0 6px 20px rgba(0, 0, 0, 0.55);
+	color: #f0d9a8;
+	font-size: 13px;
+	line-height: 1.3;
+	font-variant-numeric: tabular-nums;
+	pointer-events: none;
+	z-index: 99993;
+}
+
+.tut-bar-text {
+	margin: 0;
+	padding: 0;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+/* 移动端：避开底部导航栏（60px + 安全区） */
+@media (max-width: 768px) {
+	.tut-card {
+		bottom: calc(72px + env(safe-area-inset-bottom));
+		width: min(440px, 94vw);
+	}
+
+	.tut-bar {
+		bottom: calc(72px + env(safe-area-inset-bottom));
+		font-size: 12px;
+	}
+}

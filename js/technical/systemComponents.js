@@ -307,6 +307,10 @@ var systemComponents = {
             <tr class="mset-log-row">
                 <td class="mset-log-cell"><button class="opt" onclick="if(typeof showGameLog==='function')showGameLog()">{{geti18n()?'游戏日志':'Game log'}}</button></td>
             </tr>
+            <!-- 新手教程入口（桌面 / 移动端均可见） -->
+            <tr class="mset-tut-row">
+                <td class="mset-tut-cell"><button class="opt" onclick="if(window.Tutorial)window.Tutorial.start(true)">{{geti18n()?'重看新手教程':'Replay tutorial'}}</button></td>
+            </tr>
             <!-- 显示设置（原「显示」组，保留全部现有功能） -->
             <tr>
                 <td class="mset-group-title"><h1>{{geti18n()?'显示设置':'Display'}}</h1></td>
