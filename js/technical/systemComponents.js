@@ -286,6 +286,9 @@ var systemComponents = {
                 <td><button class="opt" onclick="if(typeof applyUpdatingRate==='function')applyUpdatingRate(15);else{options.updatingRate=15;try{if(typeof startInterval==='function')startInterval();}catch(e){}}">15ms</button></td>
                 <td><button class="opt" onclick="if(typeof applyUpdatingRate==='function')applyUpdatingRate(25);else{options.updatingRate=25;try{if(typeof startInterval==='function')startInterval();}catch(e){}}">25ms</button></td>
                 <td><button class="opt" onclick="if(typeof applyUpdatingRate==='function')applyUpdatingRate(50);else{options.updatingRate=50;try{if(typeof startInterval==='function')startInterval();}catch(e){}}">50ms</button></td>
+            </tr>
+            <tr>
+                <td><h1>{{''}}</h1></td>
                 <td><button class="opt" onclick="if(typeof applyUpdatingRate==='function')applyUpdatingRate(100);else{options.updatingRate=100;try{if(typeof startInterval==='function')startInterval();}catch(e){}}">100ms</button></td>
                 <td><button class="opt" onclick="if(typeof applyUpdatingRate==='function')applyUpdatingRate(200);else{options.updatingRate=200;try{if(typeof startInterval==='function')startInterval();}catch(e){}}">200ms</button></td>
                 <td><button class="opt" onclick="if(typeof applyUpdatingRate==='function')applyUpdatingRate(500);else{options.updatingRate=500;try{if(typeof startInterval==='function')startInterval();}catch(e){}}">500ms</button></td>
